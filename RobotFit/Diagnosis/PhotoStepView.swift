@@ -1,5 +1,6 @@
 import AVFoundation
 import PhotosUI
+import RoomPlan
 import SwiftUI
 
 struct PhotoStepView: View {
@@ -15,6 +16,7 @@ struct PhotoStepView: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isShowingPicker = false
     @State private var isShowingCamera = false
+    @State private var isScanning = false
     @State private var isCameraDenied = false
 
     private var photos: [DiagnosisPhoto] {
@@ -66,6 +68,17 @@ struct PhotoStepView: View {
                 setPhotos(photos.filter { !$0.isExample } + [DiagnosisPhoto(image: image, sampleName: nil)])
             }
             .ignoresSafeArea()
+        }
+        .fullScreenCover(isPresented: $isScanning) {
+            RoomScanScreen { room in
+                model.applyScan(room)
+                if let url = model.scannedModelURL, let image = Kitchen3DView.snapshot(of: url) {
+                    setPhotos(photos.filter { !$0.isExample } + [DiagnosisPhoto(image: image, sampleName: nil)])
+                }
+                isScanning = false
+            } onCancel: {
+                isScanning = false
+            }
         }
         .alert("카메라 접근이 꺼져 있어요", isPresented: $isCameraDenied) {
             Button("취소", role: .cancel) {}
@@ -228,20 +241,29 @@ struct PhotoStepView: View {
     }
 
     private func openCamera() {
-        guard UIImagePickerController.isSourceTypeAvailable(.camera) else { return }
+        let scan = step == .kitchen && RoomCaptureSession.isSupported
+        guard scan || UIImagePickerController.isSourceTypeAvailable(.camera) else { return }
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            isShowingCamera = true
+            present(scan: scan)
         case .notDetermined:
             Task {
                 if await AVCaptureDevice.requestAccess(for: .video) {
-                    isShowingCamera = true
+                    present(scan: scan)
                 } else {
                     isCameraDenied = true
                 }
             }
         default:
             isCameraDenied = true
+        }
+    }
+
+    private func present(scan: Bool) {
+        if scan {
+            isScanning = true
+        } else {
+            isShowingCamera = true
         }
     }
 

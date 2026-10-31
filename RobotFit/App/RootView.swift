@@ -7,6 +7,8 @@ struct RootView: View {
         Group {
             if auth.isSignedIn {
                 TabView {
+                    DiagnosisTab()
+                        .tabItem { Label("진단", systemImage: "stethoscope") }
                     ScanView()
                         .tabItem { Label("주방 스캔", systemImage: "viewfinder") }
                     CommunityView()

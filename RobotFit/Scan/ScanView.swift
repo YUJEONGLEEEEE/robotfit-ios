@@ -61,7 +61,7 @@ struct ScanView: View {
     }
 }
 
-private struct RoomScanScreen: View {
+struct RoomScanScreen: View {
     let onFinish: (CapturedRoom) -> Void
     let onCancel: () -> Void
 

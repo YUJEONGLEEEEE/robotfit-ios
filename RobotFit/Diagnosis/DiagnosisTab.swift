@@ -19,6 +19,8 @@ struct DiagnosisTab: View {
         switch route {
         case .kitchenPhotos: PhotoStepView(step: .kitchen)
         case .menuPhotos: PhotoStepView(step: .menu)
+        case .kitchenConfirm: KitchenConfirmView()
+        case .kitchenEdit: KitchenEditView()
         case .storeInfo: StoreInfoView()
         case .analyzing: AnalyzingView(mode: .photos)
         case .diagnosing: AnalyzingView(mode: .store)

@@ -41,21 +41,26 @@ struct MyView: View {
                 Section {
                     Button {
                         diagnosis.selectedTab = .diagnosis
-                        diagnosis.path = [.result]
+                        diagnosis.path = diagnosis.isReady ? [.result] : []
                     } label: {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(spacing: 12) {
                                 IconTile(systemName: "storefront")
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(store.name).font(.headline).foregroundStyle(.primary)
-                                    Text(store.region == .gyeongbuk ? "경북 포항" : "경북 외 지역")
+                                    Text(!diagnosis.edited.contains(.region) ? "위치 미정" : store.region == .gyeongbuk ? "경북" : "경북 외 지역")
                                         .font(.footnote)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                             }
-                            if let top {
+                            if !diagnosis.isReady {
+                                Divider()
+                                Text("아직 진단하지 않았어요")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            } else if let top {
                                 Divider()
                                 HStack {
                                     VerdictBadge(verdict: top.verdict, text: top.badgeText)

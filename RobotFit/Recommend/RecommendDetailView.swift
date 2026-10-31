@@ -83,7 +83,9 @@ struct RecommendDetailView: View {
                     Text("설치 자리")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(Palette.ink)
-                    Text("\(model.scannedModelURL == nil ? "AI가 잰" : "LiDAR로 잰") 사장님 주방 \(Format.number(kitchen.widthM))×\(Format.number(kitchen.depthM))m 기준이에요")
+                    Text(model.kitchenKnown
+                         ? "\(model.scannedModelURL == nil ? "입력한" : "LiDAR로 잰") 사장님 주방 \(Format.number(kitchen.widthM))×\(Format.number(kitchen.depthM))m 기준이에요"
+                         : "입력한 설치 가능 위치 기준이에요. 주방 크기는 아직 입력하지 않았어요")
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.sub)
                 }
@@ -94,7 +96,12 @@ struct RecommendDetailView: View {
                     keyRow("로봇 크기", "가로 × 깊이 × 높이", robot.sizeText)
                     keyRow("가로 여유", "예상 설치 위치 가로 \(Format.number(store.fryLineCm.w))cm에서 뺀 값", robot.marginW.map(Format.cm) ?? "확인 필요")
                     keyRow("깊이 여유", "예상 설치 위치 깊이 \(Format.number(store.fryLineCm.d))cm에서 뺀 값", robot.marginD.map(Format.cm) ?? "확인 필요")
-                    keyRow("앞쪽 남는 폭", "주방 폭 \(Format.number(min(kitchen.widthM, kitchen.depthM) * 100))cm에서 로봇 깊이를 뺀 값", robot.frontWidth.map(Format.cm) ?? "확인 필요", last: true)
+                    keyRow(
+                        "앞쪽 남는 폭",
+                        model.kitchenKnown ? "주방 폭 \(Format.number(min(kitchen.widthM, kitchen.depthM) * 100))cm에서 로봇 깊이를 뺀 값" : "주방 크기를 입력하면 계산해요",
+                        robot.frontWidth.map(Format.cm) ?? "확인 필요",
+                        last: true
+                    )
                 }
 
                 Card(padding: 8) {

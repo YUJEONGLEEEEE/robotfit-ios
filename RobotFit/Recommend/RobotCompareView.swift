@@ -16,7 +16,9 @@ struct RobotCompareView: View {
                 if robots.count == 2 {
                     Headline(
                         title: "두 로봇을 나란히 비교해요",
-                        sub: "사장님 주방 \(Format.number(model.kitchen.widthM))×\(Format.number(model.kitchen.depthM))m에 각각 실제 크기로 놓아 봤어요."
+                        sub: model.kitchenKnown
+                            ? "사장님 주방 \(Format.number(model.kitchen.widthM))×\(Format.number(model.kitchen.depthM))m에 각각 실제 크기로 놓아 봤어요."
+                            : "예상 설치 위치에 각각 실제 크기로 놓아 봤어요."
                     )
                     SideBySide(robots: robots, tick: tick)
                 } else {

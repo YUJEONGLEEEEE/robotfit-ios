@@ -52,6 +52,22 @@ struct StoreProfile: Equatable {
     var reducedStaffHoursPerDay: Double
     var cleaningBy: Cleaner
 
+    static let blank = StoreProfile(
+        name: "우리 가게",
+        region: .other,
+        processes: [.fry],
+        sales: Sales(weekday: 0, weekdayCount: 4, busyDay: 0, busyDayCount: 2),
+        peakPerHour: 0,
+        soloLimitPerHour: 9,
+        fryLineCm: Line(w: 0, d: 0),
+        hasThreePhase: false,
+        hasExhaustHood: false,
+        reducedStaffHoursPerDay: 0,
+        cleaningBy: .owner
+    )
+
+    static let peakPerWeekdaySale = 15.0 / 40.0
+
     static let minsu = StoreProfile(
         name: "민수네 치킨",
         region: .gyeongbuk,

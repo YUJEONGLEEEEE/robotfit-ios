@@ -75,9 +75,12 @@ struct ResultView: View {
                         ForEach(analysis.processes, id: \.self) { process in
                             chip(process.label)
                         }
-                        chip("소스 버무리기")
                     }
                     .padding(.top, 16)
+                    Text(menuLine(analysis))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Palette.sub)
+                        .padding(.top, 10)
                 }
 
                 Card {
@@ -162,6 +165,12 @@ struct ResultView: View {
                 }
             }
         }
+    }
+
+    private func menuLine(_ analysis: PhotoAnalysis) -> String {
+        let fried = analysis.menus.filter { $0.process == .fry }.count
+        let prefix = analysis.source == .photo ? "AI가 메뉴판에서" : "예시 메뉴판에서"
+        return "\(prefix) 튀김 메뉴 \(fried)개를 찾았어요 (전체 \(analysis.menus.count)개)"
     }
 
     private func chip(_ text: String) -> some View {

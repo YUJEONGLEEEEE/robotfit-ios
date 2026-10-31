@@ -4,12 +4,20 @@ struct RobotCompareView: View {
     @Environment(DiagnosisModel.self) private var model
     let robotIDs: [String]
 
+    @State private var ids: [String]
     @State private var baseID: String?
     @State private var tick = 0
+    @State private var playing = true
+    @State private var planView = false
+
+    init(robotIDs: [String]) {
+        self.robotIDs = robotIDs
+        _ids = State(initialValue: robotIDs)
+    }
 
     var body: some View {
         let all = RobotPresentation.all(model: model)
-        let robots = robotIDs.compactMap { id in all.first { $0.robot.id == id } }
+        let robots = ids.compactMap { id in all.first { $0.robot.id == id } }
 
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -20,7 +28,7 @@ struct RobotCompareView: View {
                             ? "사장님 주방 \(Format.number(model.kitchen.widthM))×\(Format.number(model.kitchen.depthM))m에 각각 실제 크기로 놓아 봤어요."
                             : "예상 설치 위치에 각각 실제 크기로 놓아 봤어요."
                     )
-                    SideBySide(robots: robots, tick: tick)
+                    SideBySide(all: all, robots: robots, ids: $ids, tick: tick, playing: $playing, planView: $planView)
                 } else {
                     Headline(title: "고른 로봇 \(robots.count)대를 비교해요", sub: "로봇을 누르면 그 로봇을 기준으로 차이를 보여줘요.")
                     BaseComparison(robots: robots, baseID: $baseID, tick: tick)
@@ -35,7 +43,7 @@ struct RobotCompareView: View {
                 FooterButtons {
                     HStack(spacing: 8) {
                         ForEach(robots, id: \.robot.id) { robot in
-                            PrimaryButton(title: "\(robot.robot.displayName) 상세") {
+                            PrimaryButton(title: "\(robot.robot.displayName) 자세히") {
                                 model.path.append(.robot(robot.robot.id))
                             }
                         }
@@ -46,7 +54,7 @@ struct RobotCompareView: View {
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(1400))
-                tick += 1
+                if playing { tick += 1 }
             }
         }
     }
@@ -54,31 +62,85 @@ struct RobotCompareView: View {
 
 private struct SideBySide: View {
     @Environment(DiagnosisModel.self) private var model
+    let all: [RobotPresentation]
     let robots: [RobotPresentation]
+    @Binding var ids: [String]
     let tick: Int
+    @Binding var playing: Bool
+    @Binding var planView: Bool
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(Array(robots.enumerated()), id: \.offset) { slot, robot in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Menu {
+                            ForEach(all, id: \.robot.id) { option in
+                                if !ids.contains(option.robot.id) || option.robot.id == robot.robot.id {
+                                    Button(option.robot.displayName) { ids[slot] = option.robot.id }
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text(robot.robot.displayName)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(Palette.ink)
+                                Spacer()
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Palette.faint)
+                            }
+                            .padding(.horizontal, 14)
+                            .frame(height: 48)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.line, lineWidth: 1))
+                        }
+                        Text(robot.robot.purchasePriceKrw.map(Format.priceWon) ?? "가격 미공개")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Palette.ink)
+                            .padding(.leading, 4)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+
+            HStack {
+                HStack(spacing: 0) {
+                    modeButton("3D", selected: !planView) { planView = false }
+                    modeButton("평면", selected: planView) { planView = true }
+                }
+                .padding(3)
+                .background(Palette.line, in: Capsule())
+                Spacer()
+                Button(playing ? "움직임 멈춤" : "움직임 재생") { playing.toggle() }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Palette.good)
+            }
+            .padding(.top, 4)
+
+            HStack(alignment: .top, spacing: 8) {
                 ForEach(robots, id: \.robot.id) { robot in
-                    VStack(spacing: 0) {
+                    let index = robot.steps.isEmpty ? 0 : tick % robot.steps.count
+                    VStack(alignment: .leading, spacing: 8) {
                         Kitchen3DView(
                             kitchen: model.displayKitchen,
                             fryLine: model.store.fryLineCm,
                             layout: model.analysis.layout,
-                        robots: robot.placed.map { [$0] } ?? [],
+                            robots: robot.placed.map { [$0] } ?? [],
                             steps: robot.steps,
-                            stepIndex: robot.steps.isEmpty ? 0 : tick % robot.steps.count,
-                            showsMarker: robot.placed == nil
+                            stepIndex: index,
+                            showsMarker: robot.placed == nil,
+                            topView: planView
                         )
-                        .frame(height: 150)
-                        Text(robot.robot.displayName)
-                            .font(.system(size: 15, weight: .bold))
+                        .frame(height: 190)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        Text(robot.steps.isEmpty ? "움직임 자료가 아직 없어요" : "\(index + 1). \(robot.steps[index])")
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(Palette.ink)
-                            .padding(.vertical, 10)
+                            .padding(.leading, 4)
                     }
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: 16))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .frame(maxWidth: .infinity)
                 }
             }
 
@@ -157,6 +219,17 @@ private struct SideBySide: View {
                     }
                 }
             }
+        }
+    }
+
+    private func modeButton(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(selected ? .white : Palette.sub)
+                .padding(.horizontal, 16)
+                .frame(height: 32)
+                .background(selected ? Palette.ink : .clear, in: Capsule())
         }
     }
 

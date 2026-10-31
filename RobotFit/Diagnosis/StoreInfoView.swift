@@ -10,7 +10,7 @@ struct StoreInfoView: View {
     @State private var weeklyHours = ""
     @State private var loaded = false
 
-    private let required: [EditedField] = [.weekday, .region, .reducedStaff]
+    private let required: [EditedField] = [.weekday, .reducedStaff]
 
     var body: some View {
         let missing = required.filter { !model.edited.contains($0) }
@@ -58,6 +58,11 @@ struct StoreInfoView: View {
                     .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.line, lineWidth: 1))
                 }
+                Text("선택하지 않으면 전국 기준으로 계산하고 경북 바우처는 빼고 계산해요.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.sub)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
 
                 header("인력 감소 시간", caption: "로봇이 대신할 인력비용을 계산해서 알려줘요")
                 FieldBox(text: $weeklyHours, placeholder: "주당 시간을 입력해주세요", unit: "주방 알바", keyboard: .decimalPad)

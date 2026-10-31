@@ -141,7 +141,7 @@ enum EditedField: Hashable, CaseIterable {
     case soloLimit
     case reducedStaff
 
-    static let required: [EditedField] = [.region, .fryLine, .threePhase, .hood, .weekday, .reducedStaff]
+    static let required: [EditedField] = [.fryLine, .threePhase, .hood, .weekday, .reducedStaff]
 
     var label: String {
         switch self {

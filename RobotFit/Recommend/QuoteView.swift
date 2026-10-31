@@ -169,7 +169,7 @@ struct QuoteView: View {
         if let address = model.savedStores.last(where: { $0.name == model.store.name })?.address, !address.isEmpty {
             return address
         }
-        guard model.edited.contains(.region) else { return "확인 필요" }
+        guard model.edited.contains(.region) else { return "전국 기준" }
         return model.store.region == .gyeongbuk ? "경북" : "경북 외 지역"
     }
 

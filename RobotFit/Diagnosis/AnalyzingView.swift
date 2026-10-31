@@ -1,69 +1,127 @@
 import SwiftUI
 
 struct AnalyzingView: View {
+    enum Mode {
+        case photos
+        case store
+    }
+
     @Environment(DiagnosisModel.self) private var model
-    @State private var bubbles: [(text: String, live: Bool)] = [("메뉴판 읽는 중", true)]
+    let mode: Mode
+    @State private var bubbles: [Bubble] = []
     @State private var started = false
-    @State private var pulse = false
+    @State private var bob = false
+
+    struct Bubble: Identifiable, Equatable {
+        let id = UUID()
+        let text: String
+        var live = false
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Headline(title: "사진을 읽고 있어요", sub: "메뉴판과 주방 사진을 확인하는 중이에요.\n잠시만 기다려 주세요.")
+            VStack(alignment: .leading, spacing: 0) {
+                Headline(
+                    title: mode == .photos ? "AI가 사진을 읽고 있어요" : "AI가 가게 정보를 분석하고 있어요",
+                    sub: mode == .photos
+                        ? "메뉴판과 주방 사진을 확인하는 중이에요.\n잠시만 기다려 주세요."
+                        : "우리 가게에 딱 맞는 분석 결과를 작성 중입니다.\n잠시만 기다려주세요."
+                )
+                    .padding(.top, 8)
                 Image("ChefRobot")
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: 300)
+                    .blendMode(.multiply)
+                    .frame(maxWidth: 260)
                     .frame(maxWidth: .infinity)
-                    .opacity(pulse ? 1 : 0.6)
-                    .animation(.easeInOut(duration: 0.9).repeatForever(), value: pulse)
-                ForEach(Array(bubbles.enumerated()), id: \.offset) { _, bubble in
-                    HStack(spacing: 12) {
-                        RobotMark(size: 22)
-                            .frame(width: 40, height: 40)
-                            .background(Color(.secondarySystemGroupedBackground), in: Circle())
-                        HStack(spacing: 8) {
-                            if bubble.live {
-                                Circle().fill(.green).frame(width: 8, height: 8)
+                    .offset(y: bob ? -6 : 6)
+                    .animation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true), value: bob)
+                    .padding(.vertical, 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(bubbles) { bubble in
+                        HStack(spacing: 10) {
+                            RobotMark(size: 18)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white, in: Circle())
+                            HStack(spacing: 8) {
+                                if bubble.live {
+                                    Circle()
+                                        .fill(Color(red: 0.204, green: 0.78, blue: 0.349))
+                                        .frame(width: 8, height: 8)
+                                }
+                                Text(bubble.live ? "\(bubble.text)~" : bubble.text)
+                                    .font(.system(size: 15, weight: .medium))
                             }
-                            Text(bubble.text + (bubble.live ? "…" : ""))
-                                .font(.subheadline.weight(.medium))
+                            .foregroundStyle(bubble.live ? .white : Palette.ink)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(bubble.live ? Palette.ink : Color.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .foregroundStyle(bubble.live ? Color(.systemBackground) : .primary)
-                        .background(bubble.live ? Color.primary : Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("AI 분석")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden()
+        .screenChrome("AI 분석")
         .task {
             guard !started else { return }
             started = true
-            pulse = true
+            bob = true
             await run()
         }
     }
 
     private func run() async {
+        switch mode {
+        case .photos: await readPhotos()
+        case .store: await analyzeStore()
+        }
+    }
+
+    private func readPhotos() async {
         let analysis = PhotoAnalysis.example
+        bubbles = [Bubble(text: "메뉴판 읽는 중", live: true)]
         try? await Task.sleep(for: .milliseconds(1400))
-        withAnimation { bubbles = [("메뉴판 읽기 완료", false), ("주방 사진 읽는 중", true)] }
+        withAnimation {
+            bubbles = [Bubble(text: "메뉴판 읽기 완료"), Bubble(text: "주방 사진 읽는 중", live: true)]
+        }
         try? await Task.sleep(for: .milliseconds(1000))
         let lines = summary(analysis)
         for count in 1...lines.count {
-            withAnimation { bubbles = lines.prefix(count).map { ($0, false) } }
+            withAnimation { bubbles = lines.prefix(count).map { Bubble(text: $0) } }
             try? await Task.sleep(for: .milliseconds(550))
         }
         try? await Task.sleep(for: .milliseconds(500))
+        guard model.path.last == .analyzing else { return }
         model.applyAnalysis(analysis)
-        if !model.path.isEmpty { model.path.removeLast() }
+        model.path.removeLast()
+        model.path.append(.storeInfo)
+    }
+
+    private func analyzeStore() async {
+        let evaluation = model.evaluation
+        let picked = Engine.compare(evaluation.results).compared.count
+        let steps: [(live: String, done: String)] = [
+            ("가게 정보 파악 중", "가게 정보를 파악했어요"),
+            ("조리 공정 및 병목 구간 분석 중", model.store.processes.contains(.fry)
+                ? "튀김 공정이 병목 1순위예요 (하루 손작업 약 \(Int(evaluation.diag.handMinutesPerDay.rounded()))분)"
+                : "로봇이 맡을 튀김 공정이 없어요"),
+            ("로봇 \(evaluation.results.count)종과 비교 중", "우리 가게 기준으로 로봇 \(picked)대를 골랐어요"),
+        ]
+        var done: [Bubble] = []
+        for step in steps {
+            withAnimation { bubbles = done + [Bubble(text: step.live, live: true)] }
+            try? await Task.sleep(for: .milliseconds(1100))
+            done.append(Bubble(text: step.done))
+            withAnimation { bubbles = done }
+            try? await Task.sleep(for: .milliseconds(450))
+        }
+        try? await Task.sleep(for: .milliseconds(400))
+        guard model.path.last == .diagnosing else { return }
+        model.path.removeLast()
         model.path.append(.result)
     }
 

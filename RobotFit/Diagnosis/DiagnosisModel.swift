@@ -1,4 +1,5 @@
 import Observation
+import RoomPlan
 import UIKit
 import SwiftUI
 
@@ -66,6 +67,7 @@ enum DiagnosisRoute: Hashable {
     case menuPhotos
     case storeInfo
     case analyzing
+    case diagnosing
     case result
     case compare
     case size
@@ -99,6 +101,7 @@ final class DiagnosisModel {
     var path: [DiagnosisRoute] = []
     var store = StoreProfile.minsu
     var kitchen = Kitchen.minsu
+    var scannedModelURL: URL?
     var edited: Set<EditedField> = []
     var kitchenPhotos: [DiagnosisPhoto] = []
     var menuPhotos: [DiagnosisPhoto] = []
@@ -137,6 +140,7 @@ final class DiagnosisModel {
     func start() {
         store = .minsu
         kitchen = .minsu
+        scannedModelURL = nil
         edited = []
         kitchenPhotos = []
         menuPhotos = []
@@ -154,11 +158,19 @@ final class DiagnosisModel {
         }
     }
 
-    func applyScan(_ measurement: KitchenMeasurement) {
+    func applyScan(_ room: CapturedRoom) {
+        let measurement = KitchenMeasurement(room: room)
         guard measurement.widthCm > 0, measurement.depthCm > 0 else { return }
         kitchen.widthM = (measurement.widthCm / 10).rounded() / 10
         kitchen.depthM = (measurement.depthCm / 10).rounded() / 10
+        if measurement.heightCm > 0 {
+            kitchen.heightM = (measurement.heightCm / 10).rounded() / 10
+        }
         edited.insert(.kitchen)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("kitchen-\(UUID().uuidString).usdz")
+        if (try? room.export(to: url, exportOptions: .model)) != nil {
+            scannedModelURL = url
+        }
     }
 
     func rediagnose() {
@@ -182,6 +194,7 @@ final class DiagnosisModel {
         profile.peakPerHour = saved.peak ?? max(1, (weekday * peakRatio).rounded())
         store = profile
         kitchen = .minsu
+        scannedModelURL = nil
         var given: Set<EditedField> = [.region]
         if saved.weekday != nil { given.insert(.weekday) }
         if saved.busyDay != nil { given.insert(.busyDay) }

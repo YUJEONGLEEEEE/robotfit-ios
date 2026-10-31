@@ -137,7 +137,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "로봇핏";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "주방을 스캔해 크기를 재기 위해 카메라를 사용해요.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "메뉴판과 주방 사진을 찍고, 주방을 스캔해 크기를 재기 위해 카메라를 사용해요.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "메뉴판과 주방 사진을 앨범에서 고르기 위해 사진 보관함을 사용해요.";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -176,7 +178,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "로봇핏";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "주방을 스캔해 크기를 재기 위해 카메라를 사용해요.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "메뉴판과 주방 사진을 찍고, 주방을 스캔해 크기를 재기 위해 카메라를 사용해요.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "메뉴판과 주방 사진을 앨범에서 고르기 위해 사진 보관함을 사용해요.";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

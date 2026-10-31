@@ -70,13 +70,14 @@ struct StoreProfile: Equatable {
 struct Kitchen: Equatable {
     var widthM: Double
     var depthM: Double
+    var heightM: Double
     var worktableCm: Double
 
     var pyeong: Int {
         Int((widthM * depthM / 3.3058).rounded())
     }
 
-    static let minsu = Kitchen(widthM: 4.4, depthM: 3.0, worktableCm: 60)
+    static let minsu = Kitchen(widthM: 4.4, depthM: 3.0, heightM: 2.7, worktableCm: 60)
 }
 
 enum Verdict: Int, Comparable {

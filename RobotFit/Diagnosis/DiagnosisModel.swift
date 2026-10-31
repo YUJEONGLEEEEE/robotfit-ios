@@ -178,6 +178,7 @@ final class DiagnosisModel {
     var kitchenPhotos: [DiagnosisPhoto] = []
     var menuPhotos: [DiagnosisPhoto] = []
     var analysis = PhotoAnalysis.example
+    var diagnosedAt: Date?
     var savedStores: [SavedStore] = [] {
         didSet { persistStores() }
     }

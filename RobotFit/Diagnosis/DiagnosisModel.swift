@@ -67,6 +67,7 @@ enum DiagnosisRoute: Hashable {
     case menuPhotos
     case storeInfo
     case analyzing
+    case diagnosing
     case result
     case compare
     case size

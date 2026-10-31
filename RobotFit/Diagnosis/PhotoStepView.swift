@@ -48,7 +48,7 @@ struct PhotoStepView: View {
         .safeAreaInset(edge: .bottom) {
             FooterButtons {
                 PrimaryButton(title: "다음", enabled: !photos.isEmpty) {
-                    model.path.append(step == .kitchen ? .menuPhotos : .storeInfo)
+                    model.path.append(step == .kitchen ? .menuPhotos : .analyzing)
                 }
             }
         }

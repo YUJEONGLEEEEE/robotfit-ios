@@ -80,7 +80,7 @@ struct StoreInfoView: View {
         .safeAreaInset(edge: .bottom) {
             FooterButtons {
                 PrimaryButton(title: "진단하기") {
-                    model.path.append(.analyzing)
+                    model.path.append(.diagnosing)
                 }
             }
         }

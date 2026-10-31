@@ -2,6 +2,13 @@ import SwiftUI
 import UIKit
 
 enum Palette {
+    static let canvas = Color(red: 0.949, green: 0.953, blue: 0.961)
+    static let ink = Color(red: 0.067, green: 0.067, blue: 0.067)
+    static let sub = Color(red: 0.373, green: 0.388, blue: 0.408)
+    static let faint = Color(red: 0.604, green: 0.627, blue: 0.651)
+    static let line = Color(red: 0.910, green: 0.918, blue: 0.929)
+    static let action = Color(red: 0.902, green: 0.341, blue: 0.031)
+    static let disabled = Color(red: 0.851, green: 0.855, blue: 0.863)
     static let good = Color(red: 0.184, green: 0.420, blue: 1.0)
     static let warn = Color(red: 0.902, green: 0.467, blue: 0.0)
     static let bad = Color(red: 0.898, green: 0.216, blue: 0.169)
@@ -28,7 +35,7 @@ struct Card<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(padding)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -39,11 +46,12 @@ struct Headline: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.title2.bold())
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(Palette.ink)
             if let sub {
                 Text(sub)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 15))
+                    .foregroundStyle(Palette.sub)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -85,17 +93,27 @@ struct Steps: View {
     private let labels = ["주방 사진", "메뉴판", "가게 정보"]
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             ForEach(Array(labels.enumerated()), id: \.offset) { index, label in
-                let done = index + 1 <= current
-                VStack(alignment: .leading, spacing: 6) {
+                let step = index + 1
+                let active = step == current
+                let done = step <= current
+                VStack(alignment: .leading, spacing: 10) {
                     Capsule()
-                        .fill(done ? Color.primary : Color(.systemGray5))
+                        .fill(done ? Palette.ink : Palette.line)
                         .frame(height: 4)
-                    Text("\(index + 1) \(label)")
-                        .font(.caption.weight(done ? .semibold : .regular))
-                        .foregroundStyle(done ? .primary : .secondary)
+                    HStack(spacing: 6) {
+                        Text("\(step)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 18, height: 18)
+                            .background(active ? Palette.ink : Palette.faint, in: Circle())
+                        Text(label)
+                            .font(.system(size: 13, weight: active ? .semibold : .regular))
+                            .foregroundStyle(active ? Palette.ink : Palette.faint)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, 4)
@@ -151,6 +169,7 @@ struct IconTile: View {
 struct PrimaryButton: View {
     let title: String
     var style: Style = .primary
+    var enabled = true
     let action: () -> Void
 
     enum Style {
@@ -162,16 +181,27 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 52)
+                .font(.system(size: 17, weight: .semibold))
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .foregroundStyle(foreground)
+                .background(background, in: Capsule())
         }
-        .foregroundStyle(style == .primary ? Color(.systemBackground) : .primary)
-        .background {
-            switch style {
-            case .primary: RoundedRectangle(cornerRadius: 16).fill(Color.primary)
-            case .secondary: RoundedRectangle(cornerRadius: 16).fill(Color(.systemGray5))
-            case .ghost: Color.clear
-            }
+        .disabled(!enabled)
+    }
+
+    private var foreground: Color {
+        switch style {
+        case .primary: .white
+        case .secondary, .ghost: Palette.ink
+        }
+    }
+
+    private var background: Color {
+        guard enabled else { return Palette.disabled }
+        switch style {
+        case .primary: return Palette.ink
+        case .secondary: return Palette.line
+        case .ghost: return .clear
         }
     }
 }
@@ -184,9 +214,9 @@ struct FooterButtons<Content: View>: View {
             content
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, 12)
         .padding(.bottom, 8)
-        .background(.bar)
+        .background(Palette.canvas)
     }
 }
 
@@ -237,5 +267,45 @@ struct Note: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 4)
             .padding(.top, 4)
+    }
+}
+
+struct ScreenChrome: ViewModifier {
+    let title: String
+    var showsBack = true
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content
+            .background(Palette.canvas.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden()
+            .toolbarBackground(Palette.canvas, for: .navigationBar)
+            .toolbar(.hidden, for: .tabBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Palette.ink)
+                }
+                if showsBack {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(Palette.ink)
+                        }
+                        .accessibilityLabel("뒤로")
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func screenChrome(_ title: String, showsBack: Bool = true) -> some View {
+        modifier(ScreenChrome(title: title, showsBack: showsBack))
     }
 }

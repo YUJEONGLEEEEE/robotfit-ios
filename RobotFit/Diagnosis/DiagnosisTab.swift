@@ -31,33 +31,44 @@ private struct DiagnosisHome: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("RobotFit")
+                    .font(.system(size: 22, weight: .heavy))
+                    .foregroundStyle(Palette.ink)
+                    .padding(.horizontal, 4)
                 Card(padding: 24) {
                     Text("어떤 로봇이\n우리 가게에 맞을까요?")
-                        .font(.title.bold())
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                        .lineSpacing(4)
                     Text("주방 사진과 메뉴판만 있으면\n조리로봇이 들어가는지, 언제 본전인지 알려 드려요.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Palette.sub)
+                        .lineSpacing(3)
                         .padding(.top, 12)
-                    Image("ChefRobot")
-                        .resizable()
-                        .scaledToFit()
+                    Color.clear
+                        .aspectRatio(322.0 / 332.0, contentMode: .fit)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
+                        .overlay {
+                            Image("HeroKitchen")
+                                .resizable()
+                                .scaledToFill()
+                                .scaleEffect(1.19)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .padding(.top, 24)
+                        .accessibilityLabel("튀김기 옆에서 일하는 튀김로봇 일러스트")
                     PrimaryButton(title: "우리 가게 진단 시작하기") {
                         model.start()
                     }
-                    Text("로봇을 팔지 않는 중립 진단이에요. 맞지 않으면 비추천도 알려 드려요.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 12)
+                    .padding(.top, 24)
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("로봇핏")
+        .background(Palette.canvas.ignoresSafeArea())
+        .toolbar(.hidden, for: .navigationBar)
     }
 }

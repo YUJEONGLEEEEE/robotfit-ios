@@ -80,8 +80,11 @@ struct QuoteHistoryView: View {
     }
 
     private func open(_ record: QuoteRecord) {
-        guard model.result(for: record.robotID) != nil, model.edited.contains(.weekday) else { return }
-        model.path = [.compare, .robot(record.robotID), .quote(record.robotID)]
+        if model.result(for: record.robotID) != nil, model.edited.contains(.weekday) {
+            model.path = [.compare, .robot(record.robotID)]
+        } else {
+            model.path = []
+        }
         model.selectedTab = .diagnosis
     }
 }

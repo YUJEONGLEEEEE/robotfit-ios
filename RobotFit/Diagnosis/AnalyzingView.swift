@@ -127,6 +127,7 @@ struct AnalyzingView: View {
         try? await Task.sleep(for: .milliseconds(400))
         guard model.path.last == .diagnosing else { return }
         model.path.removeLast()
+        model.diagnosedAt = .now
         model.path.append(.result)
     }
 

@@ -68,7 +68,7 @@ struct MyView: View {
                         }
                         Divider().padding(.horizontal, 12)
                         link("성과 리포트", icon: "chart.bar.fill", tint: .purple, tag: "샘플", sub: "도입 후 달라진 점을 한눈에 봐요") {
-                            PendingView(title: "성과 리포트")
+                            ReportView()
                         }
                     }
                     .padding(.top, 16)
@@ -279,17 +279,5 @@ private struct AccountView: View {
             Button("저장") { auth.rename(newName) }
             Button("취소", role: .cancel) {}
         }
-    }
-}
-
-struct PendingView: View {
-    let title: String
-
-    var body: some View {
-        ScrollView {
-            Headline(title: "곧 열려요", sub: "이 화면은 준비 중이에요.")
-                .padding(16)
-        }
-        .screenChrome(title)
     }
 }

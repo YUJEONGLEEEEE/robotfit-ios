@@ -37,7 +37,7 @@ struct ComposeReviewView: View {
                 if let message = store.message {
                     Text(message)
                         .font(.footnote)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .navigationTitle("후기 쓰기")

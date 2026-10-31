@@ -13,7 +13,7 @@ struct MyView: View {
                     HStack {
                         Image(systemName: "person.crop.circle.fill")
                             .font(.system(size: 44))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color.accentColor)
                         VStack(alignment: .leading) {
                             Text(auth.displayName)
                                 .font(.title3.bold())

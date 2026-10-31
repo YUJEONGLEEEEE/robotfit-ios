@@ -69,7 +69,7 @@ struct ScanResultView: View {
     private func color(for fit: KitchenMeasurement.Fit) -> Color {
         switch fit {
         case .fits: .green
-        case .tight: .orange
+        case .tight: Color.accentColor
         case .noFit: .red
         case .unknown: .secondary
         }

@@ -19,6 +19,7 @@ struct Kitchen3DView: View {
     var steps: [String] = []
     var stepIndex = 0
     var showsMarker = true
+    var topView = false
 
     @State private var built: Built?
 
@@ -30,7 +31,7 @@ struct Kitchen3DView: View {
     }
 
     private var key: String {
-        "\(kitchen.widthM)-\(kitchen.depthM)-\(kitchen.heightM)-\(fryLine.w)-\(fryLine.d)-\(scannedModelURL?.path ?? "")-\(robots.map { "\($0.widthCm)x\($0.depthCm)" })-\(steps.count)-\(layout.count)"
+        "\(kitchen.widthM)-\(kitchen.depthM)-\(kitchen.heightM)-\(fryLine.w)-\(fryLine.d)-\(scannedModelURL?.path ?? "")-\(robots.map { "\($0.widthCm)x\($0.depthCm)" })-\(steps.count)-\(layout.count)-\(topView)"
     }
 
     var body: some View {
@@ -43,7 +44,7 @@ struct Kitchen3DView: View {
         }
         .task(id: key) {
             built = scannedModelURL.flatMap(Self.scannedScene) ?? Self.generatedScene(
-                kitchen: kitchen, fryLine: fryLine, robots: robots, layout: layout, stepTitles: steps, showsMarker: showsMarker
+                kitchen: kitchen, fryLine: fryLine, robots: robots, layout: layout, stepTitles: steps, showsMarker: showsMarker, topView: topView
             )
             move(to: stepIndex, animated: false)
         }
@@ -97,7 +98,8 @@ struct Kitchen3DView: View {
     }
 
     private static func generatedScene(
-        kitchen: Kitchen, fryLine: StoreProfile.Line, robots: [PlacedRobot], layout: [LayoutItem], stepTitles: [String], showsMarker: Bool
+        kitchen: Kitchen, fryLine: StoreProfile.Line, robots: [PlacedRobot], layout: [LayoutItem], stepTitles: [String], showsMarker: Bool,
+        topView: Bool = false
     ) -> Built {
         let scene = SCNScene()
         let long = Float(max(kitchen.widthM, kitchen.depthM))
@@ -148,7 +150,7 @@ struct Kitchen3DView: View {
             let rw = Float(robot.widthCm) / 100
             let rd = Float(robot.depthCm) / 100
             let rh = min(Float(robot.heightCm) / 100, h - 0.05)
-            let rx = lineLeft + rw / 2
+            let rx = max(-long / 2 + rw / 2 + 0.05, min(lineLeft + rw / 2, long / 2 - rw / 2 - 0.05))
             let rz = robotOnFront ? short / 2 - rd / 2 : -short / 2 + rd / 2
             let color = robot.isPrimary ? UIColor(white: 0.25, alpha: 1) : orange
             if index == 0 {
@@ -197,7 +199,9 @@ struct Kitchen3DView: View {
         }
 
         addLights(to: scene)
-        let camera = isometricCamera(looking: SCNVector3(0, h / 5, 0), span: Double(long), in: scene)
+        let camera = topView
+            ? topCamera(long: long, short: short, height: h, in: scene)
+            : isometricCamera(looking: SCNVector3(0, h / 5, 0), span: Double(long), in: scene)
         return Built(scene: scene, camera: camera, basket: basket, path: path)
     }
 
@@ -292,6 +296,20 @@ struct Kitchen3DView: View {
         sunNode.eulerAngles = SCNVector3(-Float.pi / 3, Float.pi / 5, 0)
         scene.rootNode.addChildNode(sunNode)
         scene.background.contents = UIColor.white
+    }
+
+    private static func topCamera(long: Float, short: Float, height: Float, in scene: SCNScene) -> SCNNode {
+        let camera = SCNCamera()
+        camera.usesOrthographicProjection = true
+        camera.orthographicScale = Double(max(long, short) * 0.62 + 0.2)
+        camera.zNear = 0.1
+        camera.zFar = 100
+        let node = SCNNode()
+        node.camera = camera
+        node.position = SCNVector3(0, height + 8, 0)
+        node.eulerAngles = SCNVector3(-Float.pi / 2, 0, 0)
+        scene.rootNode.addChildNode(node)
+        return node
     }
 
     private static func isometricCamera(looking center: SCNVector3, span: Double, in scene: SCNScene) -> SCNNode {

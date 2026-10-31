@@ -8,20 +8,26 @@ struct DiagnosisTab: View {
         NavigationStack(path: $model.path) {
             DiagnosisHome()
                 .navigationDestination(for: DiagnosisRoute.self) { route in
-                    switch route {
-                    case .kitchenPhotos: PhotoStepView(step: .kitchen)
-                    case .menuPhotos: PhotoStepView(step: .menu)
-                    case .storeInfo: StoreInfoView()
-                    case .analyzing: AnalyzingView()
-                    case .result: ResultView()
-                    case .compare: CompareView()
-                    case .size: SizeView()
-                    case .detail(let id): RobotDetailView(robotID: id)
-                    case .basis(let id): BasisView(robotID: id)
-                    case .notRecommended(let id): NotRecommendedView(robotID: id)
-                    case .quote: PendingView(title: "판매처 조건 비교")
-                    }
+                    destination(route)
+                        .toolbar(.hidden, for: .tabBar)
                 }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(_ route: DiagnosisRoute) -> some View {
+        switch route {
+        case .kitchenPhotos: PhotoStepView(step: .kitchen)
+        case .menuPhotos: PhotoStepView(step: .menu)
+        case .storeInfo: StoreInfoView()
+        case .analyzing: AnalyzingView()
+        case .result: ResultView()
+        case .compare: CompareView()
+        case .size: SizeView()
+        case .detail(let id): RobotDetailView(robotID: id)
+        case .basis(let id): BasisView(robotID: id)
+        case .notRecommended(let id): NotRecommendedView(robotID: id)
+        case .quote: PendingView(title: "판매처 조건 비교")
         }
     }
 }

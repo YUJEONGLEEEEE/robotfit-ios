@@ -376,19 +376,15 @@ final class DiagnosisModel {
         return size + line
     }
 
-    func hasRequested(_ robotID: String, option: String) -> Bool {
-        quoteRecords.contains { $0.robotID == robotID && $0.option == option }
-    }
-
-    func requestQuote(_ robot: Robot, option: String) {
-        guard !hasRequested(robot.id, option: option) else { return }
+    func recordQuote(_ robot: Robot) {
+        quoteRecords.removeAll { $0.robotID == robot.id }
         quoteRecords.insert(
             QuoteRecord(
                 id: UUID().uuidString,
                 robotID: robot.id,
                 robotName: robot.displayName,
                 supplier: robot.supplier ?? "공급사",
-                option: option,
+                option: "",
                 summary: requestSummary,
                 date: .now
             ),

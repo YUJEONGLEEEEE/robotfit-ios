@@ -7,7 +7,7 @@ struct QuoteHistoryView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Headline(title: "견적 기록", sub: "보낸 견적 요청이 여기에 모여요.")
+                    Headline(title: "견적 기록", sub: "확인한 견적이 여기에 모여요.")
                         .padding(.top, 8)
 
                     if model.quoteRecords.isEmpty {
@@ -16,10 +16,10 @@ struct QuoteHistoryView: View {
                                 Image(systemName: "doc.text")
                                     .font(.system(size: 28))
                                     .foregroundStyle(Palette.faint)
-                                Text("아직 보낸 견적 요청이 없어요")
+                                Text("아직 확인한 견적이 없어요")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(Palette.ink)
-                                Text("진단 결과의 로봇 상세에서 견적을 비교하고 요청할 수 있어요.")
+                                Text("진단 결과의 로봇 상세에서 견적 비교 보기를 누르면 여기에 남아요.")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Palette.sub)
                                     .multilineTextAlignment(.center)
@@ -36,11 +36,6 @@ struct QuoteHistoryView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        Text("시연용 기록이에요. 실제로 발송되지 않았어요.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Palette.sub)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 12)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -61,12 +56,14 @@ struct QuoteHistoryView: View {
                         Text(record.robotName)
                             .font(.system(size: 17, weight: .bold))
                             .foregroundStyle(Palette.ink)
-                        SmallTag(text: record.option)
+                        if !record.option.isEmpty {
+                            SmallTag(text: record.option)
+                        }
                     }
-                    Text("\(record.supplier)에 견적 요청")
+                    Text("\(record.supplier) 견적 확인")
                         .font(.system(size: 14))
                         .foregroundStyle(Palette.ink)
-                    Text(record.date.formatted(.verbatim("\(year: .defaultDigits).\(month: .twoDigits).\(day: .twoDigits)", timeZone: .current, calendar: .current)) + " 요청")
+                    Text(record.date.formatted(.verbatim("\(year: .defaultDigits).\(month: .twoDigits).\(day: .twoDigits)", timeZone: .current, calendar: .current)) + " 확인")
                         .font(.system(size: 13))
                         .foregroundStyle(Palette.sub)
                 }
@@ -76,9 +73,9 @@ struct QuoteHistoryView: View {
                     .padding(.top, 12)
             }
             Divider().padding(.vertical, 12)
-            LineRow(label: "상태", value: "요청 보냄(시연)")
+            LineRow(label: "상태", value: "견적 확인함")
             Divider()
-            LineRow(label: "요청서 내용", value: record.summary)
+            LineRow(label: "견적 조건", value: record.summary)
         }
     }
 

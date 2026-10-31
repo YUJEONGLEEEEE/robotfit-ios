@@ -141,7 +141,7 @@ enum EditedField: Hashable, CaseIterable {
     case soloLimit
     case reducedStaff
 
-    static let required: [EditedField] = [.fryLine, .threePhase, .hood, .weekday, .reducedStaff]
+    static let required: [EditedField] = [.fryLine, .threePhase, .hood, .weekday]
 
     var label: String {
         switch self {
@@ -266,6 +266,18 @@ final class DiagnosisModel {
         if !edited.contains(.peak) {
             store.peakPerHour = max(1, (value * StoreProfile.peakPerWeekdaySale).rounded())
         }
+        applySuggestedStaff()
+    }
+
+    var suggestedStaffHoursPerDay: Double {
+        guard edited.contains(.weekday) else { return 0 }
+        let hours = Engine.diagnose(store).netMinutesSaved / 60
+        return max(0, (hours * 2).rounded() / 2)
+    }
+
+    func applySuggestedStaff() {
+        guard !edited.contains(.reducedStaff) else { return }
+        store.reducedStaffHoursPerDay = suggestedStaffHoursPerDay
     }
 
     private func reset() {

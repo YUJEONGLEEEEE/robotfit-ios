@@ -164,7 +164,7 @@ private struct SideBySide: View {
                     Text(robots.first?.laborText ?? "")
                         .font(.system(size: 26, weight: .bold))
                     HStack(spacing: 6) {
-                        Text("저녁 알바 하루 \(Format.number(model.store.reducedStaffHoursPerDay))시간, 주 6일 몫")
+                        Text("저녁 알바 하루 \(Format.number(model.store.reducedStaffHoursPerDay))시간, 주 6일 몫" + (model.isAssumed(.reducedStaff) ? " (추정값)" : ""))
                             .font(.system(size: 12))
                             .foregroundStyle(Palette.sub)
                         AssumedTag(text: "추정값")

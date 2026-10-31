@@ -31,7 +31,7 @@ struct NotRecommendedView: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.accentColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                        Text("\(store.name)이 저녁 알바 없이 사장님 혼자 운영할 때 \(robot.displayName)의 판정이 어떻게 바뀌는지 보여 드려요.")
+                        Text("저녁 알바 없이 사장님 혼자 운영한다면 \(robot.displayName)의 판정이 어떻게 바뀌는지 보여 드려요.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -89,9 +89,11 @@ struct NotRecommendedView: View {
                             IconTile(systemName: "storefront", tint: Palette.good)
                             Text("배달앱 수수료 구간과 광고비를 먼저 점검해 보세요")
                         }
-                        HStack(spacing: 12) {
-                            IconTile(systemName: "mappin.and.ellipse")
-                            Text("포항 식품로봇 연구지원센터에서 튀김로봇을 직접 체험할 수 있어요")
+                        if store.region == .gyeongbuk {
+                            HStack(spacing: 12) {
+                                IconTile(systemName: "mappin.and.ellipse")
+                                Text("포항 식품로봇 연구지원센터에서 튀김로봇을 직접 체험할 수 있어요")
+                            }
                         }
                     }
                     .font(.subheadline)

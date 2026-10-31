@@ -63,7 +63,7 @@ private struct SideBySide: View {
                 ForEach(robots, id: \.robot.id) { robot in
                     VStack(spacing: 0) {
                         Kitchen3DView(
-                            kitchen: model.kitchen,
+                            kitchen: model.displayKitchen,
                             fryLine: model.store.fryLineCm,
                             robots: robot.placed.map { [$0] } ?? [],
                             steps: robot.steps,
@@ -226,7 +226,7 @@ private struct BaseComparison: View {
         VStack(spacing: 12) {
             Card(padding: 0) {
                 Kitchen3DView(
-                    kitchen: model.kitchen,
+                    kitchen: model.displayKitchen,
                     fryLine: store.fryLineCm,
                     robots: base.placed.map { [$0] } ?? [],
                     steps: base.steps,

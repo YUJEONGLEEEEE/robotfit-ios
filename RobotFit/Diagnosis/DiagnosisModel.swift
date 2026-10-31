@@ -163,6 +163,17 @@ final class DiagnosisModel {
 
     var kitchenKnown: Bool { edited.contains(.kitchen) }
 
+    var displayKitchen: Kitchen {
+        guard !kitchenKnown else { return kitchen }
+        let line = store.fryLineCm
+        return Kitchen(
+            widthM: max(2.0, (line.d + kitchen.worktableCm + 90) / 100),
+            depthM: max(3.0, (line.w + 60) / 100),
+            heightM: kitchen.heightM,
+            worktableCm: kitchen.worktableCm
+        )
+    }
+
     func fillExample() {
         store = .minsu
         if !kitchenKnown {

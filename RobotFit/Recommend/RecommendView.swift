@@ -24,7 +24,7 @@ struct RecommendView: View {
 
             ZStack(alignment: .top) {
                 Kitchen3DView(
-                    kitchen: model.kitchen,
+                    kitchen: model.displayKitchen,
                     fryLine: model.store.fryLineCm,
                     robots: focused?.placed.map { [$0] } ?? [],
                     steps: focused?.steps ?? [],
@@ -32,6 +32,17 @@ struct RecommendView: View {
                     showsMarker: focused?.placed == nil
                 )
                 .frame(height: halfTop + 24)
+                .overlay(alignment: .topLeading) {
+                    if !model.kitchenKnown {
+                        Text("주방 크기 미입력 · 설치 위치 기준 공간")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Palette.sub)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.9), in: Capsule())
+                            .padding(12)
+                    }
+                }
                 .overlay(alignment: .bottomLeading) {
                     if let focused {
                         stepCaption(focused)

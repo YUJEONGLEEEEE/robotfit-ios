@@ -25,7 +25,10 @@ struct BasisView: View {
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Headline(title: "숫자가 나온 과정이에요", sub: "\(robot.displayName), \(store.name) 기준이에요. 팀이 정한 값은 가정값으로 표시했어요.")
+                Headline(
+                    title: "비용과 혜택, 이렇게 계산했어요",
+                    sub: "\(store.name)에 \(robot.displayName)를 도입했을 때의 기준이에요.\n로봇 청소는 \(store.cleaningBy == .owner ? "사장님이 직접 하시는" : "직원이 하는") 조건으로 계산했어요.\n정확한 자료가 없는 값은 추정값으로 표시했어요."
+                )
 
                 DisclosureCard(title: "줄어드는 인건비", systemImage: "person.2", tint: Palette.bad, expanded: true) {
                     Formula(text: "저녁 알바 하루 \(Format.number(store.reducedStaffHoursPerDay))시간 × 주 6일 = 주 \(Format.number(weeklyHours))시간" + (weeklyHours >= 15 ? "\n주 15시간 이상이라 주휴수당이 붙어요." : ""))
@@ -36,7 +39,7 @@ struct BasisView: View {
                     }
                 }
 
-                DisclosureCard(title: "전기료", systemImage: "bolt", tint: Palette.warn, assumed: true) {
+                DisclosureCard(title: "전기료", systemImage: "bolt.fill", tint: Palette.warn) {
                     if let power = robot.power {
                         Formula(text: "\(Format.number(power.kw))kW × 하루 \(Int(Assumptions.robotHoursPerDay))시간 × kWh당 \(Int(Assumptions.electricityKrwPerKwh))원 × \(days)일" + (power.note.map { "\n\($0)" } ?? ""))
                         LineRow(label: "월 전기료", value: Format.manWon(electricity), strong: true)
@@ -84,7 +87,20 @@ struct BasisView: View {
                     }
                 }
 
-                DisclosureCard(title: "업무 시간 절감 효과", systemImage: "clock", tint: Palette.warn, assumed: true) {
+                if let best {
+                    DisclosureCard(title: "손익 분기 판매량", systemImage: "chart.bar.fill", tint: Palette.action) {
+                        Formula(text: "로봇 월 비용(\(best.subsidy.short) 기준) ÷ (아낀 손작업 1개당 인건비 × \(days)일)\n아낀 손작업 1개당 인건비 = \(Int(Assumptions.handMinutesPerItem))분 × 대신하는 비율 × 시급 ÷ 60")
+                        ForEach(Assumptions.replacementRates.reversed(), id: \.self) { rate in
+                            LineRow(
+                                label: "로봇이 손작업의 \(Int(rate * 100))%를 대신하면",
+                                value: "하루 \(Engine.breakEvenPerDay(best, diag: diag, replacementRate: rate))개",
+                                strong: rate == 0.6
+                            )
+                        }
+                    }
+                }
+
+                DisclosureCard(title: "업주 시간 절감 효과", systemImage: "clock", tint: Palette.warn, assumed: true) {
                     Formula(text: "하루 평균 \(Int(diag.averageDailySales.rounded()))마리 = (평일 \(Format.number(store.sales.weekday))×\(Int(store.sales.weekdayCount))일 + 금토 \(Format.number(store.sales.busyDay))×\(Int(store.sales.busyDayCount))일) ÷ \(Int(store.sales.weekdayCount + store.sales.busyDayCount))일")
                     LineRow(label: "손작업 1마리 \(Int(Assumptions.handMinutesPerItem))분", value: "하루 \(Int(diag.handMinutesPerDay.rounded()))분")
                     LineRow(label: "로봇과 함께 1마리 \(Int(Assumptions.handMinutesWithRobot))분", value: "하루 \(Int(diag.handMinutesWithRobot.rounded()))분")
@@ -96,7 +112,7 @@ struct BasisView: View {
                         .padding(.top, 8)
                 }
 
-                DisclosureCard(title: "추정값과 출처", assumed: true) {
+                DisclosureCard(title: "추정값 목록", assumed: true) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(sources, id: \.self) { line in
                             Text("· \(line)")

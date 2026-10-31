@@ -65,7 +65,8 @@ private struct SideBySide: View {
                         Kitchen3DView(
                             kitchen: model.displayKitchen,
                             fryLine: model.store.fryLineCm,
-                            robots: robot.placed.map { [$0] } ?? [],
+                            layout: model.analysis.layout,
+                        robots: robot.placed.map { [$0] } ?? [],
                             steps: robot.steps,
                             stepIndex: robot.steps.isEmpty ? 0 : tick % robot.steps.count,
                             showsMarker: robot.placed == nil
@@ -228,7 +229,8 @@ private struct BaseComparison: View {
                 Kitchen3DView(
                     kitchen: model.displayKitchen,
                     fryLine: store.fryLineCm,
-                    robots: base.placed.map { [$0] } ?? [],
+                    layout: model.analysis.layout,
+                        robots: base.placed.map { [$0] } ?? [],
                     steps: base.steps,
                     stepIndex: base.steps.isEmpty ? 0 : tick % base.steps.count,
                     showsMarker: base.placed == nil

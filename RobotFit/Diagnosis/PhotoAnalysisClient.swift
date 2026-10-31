@@ -10,17 +10,39 @@ enum PhotoAnalysisClient {
             let process: String
         }
 
+        struct Size: Decodable {
+            let widthM: Double
+            let depthM: Double
+            let heightM: Double
+        }
+
+        struct Line: Decodable {
+            let widthCm: Double
+            let depthCm: Double
+        }
+
+        struct Item: Decodable {
+            let kind: String
+            let wall: String
+            let widthCm: Double
+        }
+
         let ok: Bool
         let menus: [Menu]?
+        let storeName: String?
         let fryerCount: Int?
         let hasExhaustHood: Bool?
+        let hasThreePhase: Bool?
+        let kitchen: Size?
+        let fryLine: Line?
+        let layout: [Item]?
         let notes: [String]?
     }
 
     static func analyze(kitchen: [UIImage], menu: [UIImage]) async -> PhotoAnalysis {
         guard !kitchen.isEmpty || !menu.isEmpty else { return .example }
         do {
-            var request = URLRequest(url: endpoint, timeoutInterval: 25)
+            var request = URLRequest(url: endpoint, timeoutInterval: 40)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONEncoder().encode([
@@ -30,12 +52,20 @@ enum PhotoAnalysisClient {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else { return fallback }
             let decoded = try JSONDecoder().decode(Response.self, from: data)
-            guard decoded.ok, let menus = decoded.menus, !menus.isEmpty else { return fallback }
+            guard decoded.ok, let menus = decoded.menus, !menus.isEmpty || decoded.kitchen != nil else { return fallback }
             return PhotoAnalysis(
                 source: .photo,
                 menus: menus.map { MenuItem(name: $0.name, process: CookProcess(rawValue: $0.process) ?? .other) },
+                storeName: decoded.storeName,
                 fryerCount: decoded.fryerCount,
                 hasExhaustHood: decoded.hasExhaustHood,
+                hasThreePhase: decoded.hasThreePhase,
+                kitchen: decoded.kitchen.map { Kitchen(widthM: $0.widthM, depthM: $0.depthM, heightM: $0.heightM, worktableCm: 60) },
+                fryLine: decoded.fryLine.map { StoreProfile.Line(w: $0.widthCm, d: $0.depthCm) },
+                layout: (decoded.layout ?? []).compactMap { item in
+                    guard let wall = LayoutItem.Wall(rawValue: item.wall) else { return nil }
+                    return LayoutItem(kind: LayoutItem.Kind(rawValue: item.kind) ?? .other, wall: wall, widthCm: item.widthCm)
+                },
                 notes: decoded.notes ?? []
             )
         } catch {

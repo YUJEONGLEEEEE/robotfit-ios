@@ -26,7 +26,8 @@ struct RecommendView: View {
                 Kitchen3DView(
                     kitchen: model.displayKitchen,
                     fryLine: model.store.fryLineCm,
-                    robots: focused?.placed.map { [$0] } ?? [],
+                    layout: model.analysis.layout,
+                        robots: focused?.placed.map { [$0] } ?? [],
                     steps: focused?.steps ?? [],
                     stepIndex: focused.map { $0.steps.isEmpty ? 0 : tick % $0.steps.count } ?? 0,
                     showsMarker: focused?.placed == nil

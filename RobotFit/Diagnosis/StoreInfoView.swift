@@ -46,22 +46,23 @@ struct StoreInfoView: View {
                     InfoRow(label: "시·도", value: value(.region, store.region == .gyeongbuk ? "경북" : "경북 외 지역"), missing: missing(.region), last: true)
                 }
 
-                sectionHeader("주방 구조", caption: scanned ? "LiDAR로 스캔한 주방 구조예요." : "AI가 분석한 주방 구조예요.", section: .kitchen)
+                sectionHeader("주방 구조", caption: kitchenCaption(scanned), section: .kitchen)
                 Card(padding: 0) {
                     if model.kitchenKnown {
-                        Kitchen3DView(kitchen: kitchen, fryLine: store.fryLineCm, scannedModelURL: model.scannedModelURL)
+                        Kitchen3DView(kitchen: kitchen, fryLine: store.fryLineCm, layout: model.analysis.layout,
+                        scannedModelURL: model.scannedModelURL)
                             .frame(height: 230)
                             .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24))
                     } else {
                         kitchenPlaceholder
                     }
-                    InfoRow(label: "주방 넓이", value: model.kitchenKnown ? "\(kitchen.pyeong)평" : "스캔 또는 입력", optional: !model.kitchenKnown)
+                    InfoRow(label: "주방 넓이", value: model.kitchenKnown ? "\(kitchen.pyeong)평" : "스캔 또는 입력", tag: ai(.kitchen), optional: !model.kitchenKnown)
                     InfoRow(label: "주방 가로폭", value: model.kitchenKnown ? "\(Format.number(kitchen.widthM))m" : "—", optional: !model.kitchenKnown)
                     InfoRow(label: "주방 세로폭", value: model.kitchenKnown ? "\(Format.number(kitchen.depthM))m" : "—", optional: !model.kitchenKnown)
                     InfoRow(label: "주방 높이", value: model.kitchenKnown ? "\(Format.number(kitchen.heightM))m" : "—", optional: !model.kitchenKnown)
-                    InfoRow(label: "예상 로봇 설치 가능 위치", value: value(.fryLine, "\(Format.number(store.fryLineCm.w))×\(Format.number(store.fryLineCm.d))cm"), missing: missing(.fryLine))
-                    InfoRow(label: "3상 전원", value: value(.threePhase, store.hasThreePhase ? "있음" : "없음"), missing: missing(.threePhase))
-                    InfoRow(label: "배기 후드", value: value(.hood, store.hasExhaustHood ? "있음" : "없음"), missing: missing(.hood), last: true)
+                    InfoRow(label: "예상 로봇 설치 가능 위치", value: value(.fryLine, "\(Format.number(store.fryLineCm.w))×\(Format.number(store.fryLineCm.d))cm"), missing: missing(.fryLine), tag: ai(.fryLine))
+                    InfoRow(label: "3상 전원", value: value(.threePhase, store.hasThreePhase ? "있음" : "없음"), missing: missing(.threePhase), tag: ai(.threePhase))
+                    InfoRow(label: "배기 후드", value: value(.hood, store.hasExhaustHood ? "있음" : "없음"), missing: missing(.hood), tag: ai(.hood), last: true)
                 }
 
                 sectionHeader("평균 판매량", caption: "로봇 도입 효과를 비교하기 위해 입력된 수치예요.", section: .sales)
@@ -152,6 +153,16 @@ struct StoreInfoView: View {
         .frame(height: 200)
         .background(Palette.canvas.opacity(0.6))
         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24))
+    }
+
+    private func ai(_ field: EditedField) -> String? {
+        model.aiEstimated.contains(field) ? "AI 추정" : nil
+    }
+
+    private func kitchenCaption(_ scanned: Bool) -> String {
+        if scanned { return "LiDAR로 스캔한 주방 구조예요." }
+        if model.aiEstimated.contains(.kitchen) { return "AI가 사진으로 추정한 주방 구조예요. 다르면 수정해 주세요." }
+        return model.kitchenKnown ? "입력한 크기로 그린 주방 구조예요." : "AI가 분석한 주방 구조예요."
     }
 
     private func missing(_ field: EditedField) -> Bool {
@@ -385,7 +396,7 @@ private struct SectionEditor: View {
         case .location:
             if let region {
                 model.store.region = region
-                model.edited.insert(.region)
+                model.confirm(.region)
             }
         case .kitchen:
             if let w = number("widthM"), let d = number("depthM"), w > 0, d > 0 {
@@ -393,36 +404,36 @@ private struct SectionEditor: View {
                 model.kitchen.depthM = d
                 model.kitchen.heightM = number("heightM") ?? model.kitchen.heightM
                 model.scannedModelURL = nil
-                model.edited.insert(.kitchen)
+                model.confirm(.kitchen)
             }
             if let w = number("lineW"), let d = number("lineD"), w > 0, d > 0 {
                 model.store.fryLineCm = .init(w: w, d: d)
-                model.edited.insert(.fryLine)
+                model.confirm(.fryLine)
             }
             if let threePhase {
                 model.store.hasThreePhase = threePhase
-                model.edited.insert(.threePhase)
+                model.confirm(.threePhase)
             }
             if let hood {
                 model.store.hasExhaustHood = hood
-                model.edited.insert(.hood)
+                model.confirm(.hood)
             }
         case .sales:
             if let busy = number("busyDay") {
                 model.store.sales.busyDay = busy
-                model.edited.insert(.busyDay)
+                model.confirm(.busyDay)
             } else {
                 model.edited.remove(.busyDay)
             }
             if let peak = number("peak"), peak > 0 {
                 model.store.peakPerHour = peak
-                model.edited.insert(.peak)
+                model.confirm(.peak)
             } else {
                 model.edited.remove(.peak)
             }
             if let solo = number("solo"), solo > 0 {
                 model.store.soloLimitPerHour = solo
-                model.edited.insert(.soloLimit)
+                model.confirm(.soloLimit)
             }
             if let weekday = number("weekday") {
                 model.setWeekday(weekday)
@@ -430,7 +441,7 @@ private struct SectionEditor: View {
         case .staff:
             if let staff = number("staff") {
                 model.store.reducedStaffHoursPerDay = staff
-                model.edited.insert(.reducedStaff)
+                model.confirm(.reducedStaff)
             }
             model.store.cleaningBy = cleaner
         }

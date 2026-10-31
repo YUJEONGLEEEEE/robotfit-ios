@@ -8,6 +8,28 @@ struct MenuItem: Hashable {
     let process: CookProcess
 }
 
+struct LayoutItem: Hashable {
+    enum Kind: String {
+        case fryer
+        case sink
+        case fridge
+        case worktable
+        case shelf
+        case dishwasher
+        case other
+    }
+
+    enum Wall: String {
+        case left
+        case right
+        case back
+    }
+
+    let kind: Kind
+    let wall: Wall
+    let widthCm: Double
+}
+
 struct PhotoAnalysis {
     enum Source {
         case example
@@ -16,8 +38,13 @@ struct PhotoAnalysis {
 
     let source: Source
     let menus: [MenuItem]
+    var storeName: String? = nil
     let fryerCount: Int?
     let hasExhaustHood: Bool?
+    var hasThreePhase: Bool? = nil
+    var kitchen: Kitchen? = nil
+    var fryLine: StoreProfile.Line? = nil
+    var layout: [LayoutItem] = []
     let notes: [String]
 
     var processes: [CookProcess] {
@@ -32,8 +59,21 @@ struct PhotoAnalysis {
         source: .example,
         menus: ["후라이드치킨", "양념치킨", "간장치킨", "매운양념치킨", "순살후라이드", "순살양념치킨", "청양갈릭치킨"]
             .map { MenuItem(name: $0, process: .fry) },
+        storeName: "민수네 치킨",
         fryerCount: 2,
         hasExhaustHood: true,
+        kitchen: Kitchen(widthM: 2.2, depthM: 5.5, heightM: 2.7, worktableCm: 60),
+        fryLine: StoreProfile.Line(w: 280, d: 110),
+        layout: [
+            LayoutItem(kind: .worktable, wall: .left, widthCm: 150),
+            LayoutItem(kind: .shelf, wall: .left, widthCm: 120),
+            LayoutItem(kind: .fridge, wall: .left, widthCm: 120),
+            LayoutItem(kind: .fryer, wall: .right, widthCm: 60),
+            LayoutItem(kind: .fryer, wall: .right, widthCm: 60),
+            LayoutItem(kind: .worktable, wall: .right, widthCm: 100),
+            LayoutItem(kind: .sink, wall: .right, widthCm: 120),
+            LayoutItem(kind: .shelf, wall: .back, widthCm: 120),
+        ],
         notes: ["튀김기 위에 배기 후드가 있어요", "튀김기 옆 작업대 폭이 좁아요"]
     )
 }
@@ -121,6 +161,7 @@ final class DiagnosisModel {
     var kitchen = Kitchen.minsu
     var scannedModelURL: URL?
     var edited: Set<EditedField> = []
+    var aiEstimated: Set<EditedField> = []
     var kitchenPhotos: [DiagnosisPhoto] = []
     var menuPhotos: [DiagnosisPhoto] = []
     var analysis = PhotoAnalysis.example
@@ -174,12 +215,23 @@ final class DiagnosisModel {
         )
     }
 
+    private func mark(_ field: EditedField) {
+        edited.insert(field)
+        aiEstimated.insert(field)
+    }
+
+    func confirm(_ field: EditedField) {
+        edited.insert(field)
+        aiEstimated.remove(field)
+    }
+
     func fillExample() {
         store = .minsu
         if !kitchenKnown {
             kitchen = .minsu
         }
         edited.formUnion(EditedField.allCases)
+        aiEstimated = []
     }
 
     func setWeekday(_ value: Double) {
@@ -198,6 +250,7 @@ final class DiagnosisModel {
         kitchen = .minsu
         scannedModelURL = nil
         edited = []
+        aiEstimated = []
         kitchenPhotos = []
         menuPhotos = []
         analysis = .example
@@ -209,9 +262,30 @@ final class DiagnosisModel {
         if !analysis.processes.isEmpty {
             store.processes = analysis.processes
         }
-        if let hood = analysis.hasExhaustHood {
+        if let name = analysis.storeName, !name.isEmpty, store.name == StoreProfile.blank.name {
+            store.name = name
+        }
+        if let hood = analysis.hasExhaustHood, !edited.contains(.hood) {
             store.hasExhaustHood = hood
-            edited.insert(.hood)
+            mark(.hood)
+        }
+        if let power = analysis.hasThreePhase, !edited.contains(.threePhase) {
+            store.hasThreePhase = power
+            mark(.threePhase)
+        }
+        if let estimate = analysis.kitchen, scannedModelURL == nil, !edited.contains(.kitchen),
+           estimate.widthM > 0, estimate.depthM > 0 {
+            kitchen = Kitchen(
+                widthM: (estimate.widthM * 10).rounded() / 10,
+                depthM: (estimate.depthM * 10).rounded() / 10,
+                heightM: estimate.heightM > 0 ? (estimate.heightM * 10).rounded() / 10 : kitchen.heightM,
+                worktableCm: kitchen.worktableCm
+            )
+            mark(.kitchen)
+        }
+        if let line = analysis.fryLine, !edited.contains(.fryLine), line.w > 0, line.d > 0 {
+            store.fryLineCm = .init(w: (line.w / 10).rounded() * 10, d: (line.d / 10).rounded() * 10)
+            mark(.fryLine)
         }
     }
 
@@ -223,7 +297,7 @@ final class DiagnosisModel {
         if measurement.heightCm > 0 {
             kitchen.heightM = (measurement.heightCm / 10).rounded() / 10
         }
-        edited.insert(.kitchen)
+        confirm(.kitchen)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("kitchen-\(UUID().uuidString).usdz")
         if (try? room.export(to: url, exportOptions: .model)) != nil {
             scannedModelURL = url
@@ -245,6 +319,7 @@ final class DiagnosisModel {
         kitchen = .minsu
         scannedModelURL = nil
         edited = []
+        aiEstimated = []
         if saved.address != nil {
             store.region = saved.isGyeongbuk ? .gyeongbuk : .other
             edited.insert(.region)

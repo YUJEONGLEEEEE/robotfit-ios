@@ -13,6 +13,7 @@ struct PlacedRobot: Equatable {
 struct Kitchen3DView: View {
     let kitchen: Kitchen
     let fryLine: StoreProfile.Line
+    var layout: [LayoutItem] = []
     var scannedModelURL: URL?
     var robots: [PlacedRobot] = []
     var steps: [String] = []
@@ -29,7 +30,7 @@ struct Kitchen3DView: View {
     }
 
     private var key: String {
-        "\(kitchen.widthM)-\(kitchen.depthM)-\(kitchen.heightM)-\(fryLine.w)-\(fryLine.d)-\(scannedModelURL?.path ?? "")-\(robots.map { "\($0.widthCm)x\($0.depthCm)" })-\(steps.count)"
+        "\(kitchen.widthM)-\(kitchen.depthM)-\(kitchen.heightM)-\(fryLine.w)-\(fryLine.d)-\(scannedModelURL?.path ?? "")-\(robots.map { "\($0.widthCm)x\($0.depthCm)" })-\(steps.count)-\(layout.count)"
     }
 
     var body: some View {
@@ -42,7 +43,7 @@ struct Kitchen3DView: View {
         }
         .task(id: key) {
             built = scannedModelURL.flatMap(Self.scannedScene) ?? Self.generatedScene(
-                kitchen: kitchen, fryLine: fryLine, robots: robots, stepTitles: steps, showsMarker: showsMarker
+                kitchen: kitchen, fryLine: fryLine, robots: robots, layout: layout, stepTitles: steps, showsMarker: showsMarker
             )
             move(to: stepIndex, animated: false)
         }
@@ -96,7 +97,7 @@ struct Kitchen3DView: View {
     }
 
     private static func generatedScene(
-        kitchen: Kitchen, fryLine: StoreProfile.Line, robots: [PlacedRobot], stepTitles: [String], showsMarker: Bool
+        kitchen: Kitchen, fryLine: StoreProfile.Line, robots: [PlacedRobot], layout: [LayoutItem], stepTitles: [String], showsMarker: Bool
     ) -> Built {
         let scene = SCNScene()
         let long = Float(max(kitchen.widthM, kitchen.depthM))
@@ -118,18 +119,27 @@ struct Kitchen3DView: View {
         let steel = UIColor(red: 0.78, green: 0.80, blue: 0.82, alpha: 1)
         let lineW = min(Float(fryLine.w) / 100, long - 0.2)
         let lineD = min(Float(fryLine.d) / 100, short / 2)
-        let lineLeft = -long / 2 + 0.1
-        let lineZ = -short / 2 + lineD / 2
-        let lineX = lineLeft + lineW / 2
+        var lineLeft = -long / 2 + 0.1
+        var lineZ = -short / 2 + lineD / 2
+        var robotOnFront = false
 
-        if robots.isEmpty {
-            scene.rootNode.addChildNode(box(lineW, counterHeight, lineD, steel, at: SCNVector3(lineX, counterHeight / 2, lineZ)))
+        if layout.isEmpty {
+            if robots.isEmpty {
+                scene.rootNode.addChildNode(box(lineW, counterHeight, lineD, steel, at: SCNVector3(lineLeft + lineW / 2, counterHeight / 2, lineZ)))
+            } else {
+                scene.rootNode.addChildNode(box(lineW, 0.02, lineD, UIColor(white: 0.55, alpha: 1), at: SCNVector3(lineLeft + lineW / 2, 0.01, lineZ)))
+            }
+            let worktableD = Float(kitchen.worktableCm) / 100
+            scene.rootNode.addChildNode(box(long - 0.2, counterHeight, worktableD, steel, at: SCNVector3(0, counterHeight / 2, short / 2 - worktableD / 2)))
         } else {
-            scene.rootNode.addChildNode(box(lineW, 0.02, lineD, UIColor(white: 0.55, alpha: 1), at: SCNVector3(lineX, 0.01, lineZ)))
+            let placed = placeLayout(layout, long: long, short: short, in: scene, hideFryers: !robots.isEmpty)
+            if let fry = placed {
+                lineLeft = fry.minX
+                robotOnFront = fry.onFront
+                lineZ = fry.onFront ? short / 2 - lineD / 2 : -short / 2 + lineD / 2
+            }
         }
-
-        let worktableD = Float(kitchen.worktableCm) / 100
-        scene.rootNode.addChildNode(box(long - 0.2, counterHeight, worktableD, steel, at: SCNVector3(0, counterHeight / 2, short / 2 - worktableD / 2)))
+        let lineX = lineLeft + lineW / 2
 
         let orange = UIColor(red: 0.902, green: 0.341, blue: 0.031, alpha: 1)
         var basket: SCNNode?
@@ -139,7 +149,7 @@ struct Kitchen3DView: View {
             let rd = Float(robot.depthCm) / 100
             let rh = min(Float(robot.heightCm) / 100, h - 0.05)
             let rx = lineLeft + rw / 2
-            let rz = -short / 2 + rd / 2
+            let rz = robotOnFront ? short / 2 - rd / 2 : -short / 2 + rd / 2
             let color = robot.isPrimary ? UIColor(white: 0.25, alpha: 1) : orange
             if index == 0 {
                 scene.rootNode.addChildNode(box(rw, counterHeight, rd, steel, at: SCNVector3(rx, counterHeight / 2, rz)))
@@ -189,6 +199,69 @@ struct Kitchen3DView: View {
         addLights(to: scene)
         let camera = isometricCamera(looking: SCNVector3(0, h / 5, 0), span: Double(long), in: scene)
         return Built(scene: scene, camera: camera, basket: basket, path: path)
+    }
+
+    private static func placeLayout(
+        _ layout: [LayoutItem], long: Float, short: Float, in scene: SCNScene, hideFryers: Bool
+    ) -> (minX: Float, onFront: Bool)? {
+        var fryXs: [Float] = []
+        var fryOnFront = false
+        for wall in [LayoutItem.Wall.right, .left, .back] {
+            let items = layout.filter { $0.wall == wall }
+            guard !items.isEmpty else { continue }
+            let span = wall == .back ? short - 0.2 : long - 0.2
+            let total = items.reduce(Float(0)) { $0 + Float(max($1.widthCm, 30)) / 100 }
+            let squeeze = total > span ? span / total : 1
+            var cursor = wall == .back ? -short / 2 + 0.1 : long / 2 - 0.1
+            for item in items {
+                let width = Float(max(item.widthCm, 30)) / 100 * squeeze
+                let (height, depth, color) = style(item.kind)
+                let along = wall == .back ? cursor + width / 2 : cursor - width / 2
+                cursor += wall == .back ? width : -width
+                let x: Float
+                let z: Float
+                let w: Float
+                let d: Float
+                switch wall {
+                case .right:
+                    (x, z, w, d) = (along, -short / 2 + depth / 2, width, depth)
+                case .left:
+                    (x, z, w, d) = (along, short / 2 - depth / 2, width, depth)
+                case .back:
+                    (x, z, w, d) = (-long / 2 + depth / 2, along, depth, width)
+                }
+                if item.kind == .fryer && wall != .back {
+                    fryXs.append(contentsOf: [x - w / 2, x + w / 2])
+                    fryOnFront = wall == .left
+                    if hideFryers { continue }
+                }
+                if item.kind == .shelf {
+                    for level in [Float(1.1), 1.5] {
+                        scene.rootNode.addChildNode(box(w, 0.04, d, color, at: SCNVector3(x, level, z)))
+                    }
+                } else {
+                    scene.rootNode.addChildNode(box(w, height, d, color, at: SCNVector3(x, height / 2, z)))
+                    if item.kind == .fryer {
+                        let oil = UIColor(red: 0.902, green: 0.62, blue: 0.2, alpha: 1)
+                        scene.rootNode.addChildNode(box(w * 0.8, 0.02, d * 0.7, oil, at: SCNVector3(x, height + 0.01, z)))
+                    }
+                }
+            }
+        }
+        guard let minX = fryXs.min() else { return nil }
+        return (minX, fryOnFront)
+    }
+
+    private static func style(_ kind: LayoutItem.Kind) -> (height: Float, depth: Float, color: UIColor) {
+        switch kind {
+        case .fryer: (0.9, 0.7, UIColor(white: 0.35, alpha: 1))
+        case .sink: (0.9, 0.7, UIColor(red: 0.72, green: 0.80, blue: 0.86, alpha: 1))
+        case .fridge: (1.9, 0.75, UIColor(white: 0.88, alpha: 1))
+        case .worktable: (0.9, 0.7, UIColor(red: 0.78, green: 0.80, blue: 0.82, alpha: 1))
+        case .shelf: (0.04, 0.35, UIColor(red: 0.74, green: 0.76, blue: 0.78, alpha: 1))
+        case .dishwasher: (0.9, 0.7, UIColor(white: 0.8, alpha: 1))
+        case .other: (0.9, 0.6, UIColor(white: 0.7, alpha: 1))
+        }
     }
 
     private static func node(_ geometry: SCNGeometry, at position: SCNVector3) -> SCNNode {

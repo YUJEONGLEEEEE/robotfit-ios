@@ -26,6 +26,7 @@ struct RecommendDetailView: View {
                     Kitchen3DView(
                         kitchen: model.displayKitchen,
                         fryLine: store.fryLineCm,
+                        layout: model.analysis.layout,
                         robots: robot.placed.map { [$0] } ?? [],
                         steps: robot.steps,
                         stepIndex: stepIndex,

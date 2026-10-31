@@ -129,9 +129,9 @@ struct StoreRegisterView: View {
             }
         }
         .sheet(isPresented: $isSearchingAddress) {
-            PlaceSearchSheet(title: "가게 주소 찾기", prompt: "도로명, 지번, 건물명", restaurantsOnly: false) { item in
-                location = PickedLocation(item)
-            } onManual: {}
+            PostcodeSheet { picked in
+                location = picked
+            }
         }
     }
 
@@ -209,15 +209,22 @@ struct PickedLocation: Equatable {
         self.address = address
     }
 
-    init(_ item: MKMapItem) {
-        let placemark = item.placemark
-        let sido = placemark.administrativeArea ?? ""
-        let city = (placemark.locality ?? placemark.subAdministrativeArea ?? "")
-            .replacingOccurrences(of: "시$|군$|구$", with: "", options: .regularExpression)
+    init(sido: String, sigungu: String, address: String) {
+        let city = (sigungu.split(separator: " ").first.map(String.init) ?? "")
+            .replacingOccurrences(of: "(시|군|구)$", with: "", options: .regularExpression)
         let shortSido = sido == "경상북도" ? "경북" : sido
         isGyeongbuk = sido == "경상북도" || sido == "경북"
         label = [shortSido, city].filter { !$0.isEmpty }.joined(separator: " ")
-        address = placemark.title ?? label
+        self.address = address
+    }
+
+    init(_ item: MKMapItem) {
+        let placemark = item.placemark
+        self.init(
+            sido: placemark.administrativeArea ?? "",
+            sigungu: placemark.locality ?? placemark.subAdministrativeArea ?? "",
+            address: placemark.title ?? ""
+        )
     }
 }
 

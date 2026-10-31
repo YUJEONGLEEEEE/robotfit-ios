@@ -156,14 +156,10 @@ struct PhotoStepView: View {
         Button {
             setPhotos([step == .kitchen ? .kitchenExample : .menuExample])
         } label: {
-            Color.clear
+            Image(step == .kitchen ? "SampleKitchen" : "SampleMenu")
+                .resizable()
+                .scaledToFit()
                 .frame(maxWidth: .infinity)
-                .frame(height: 204)
-                .overlay {
-                    Image(step == .kitchen ? "SampleKitchen" : "SampleMenu")
-                        .resizable()
-                        .scaledToFill()
-                }
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     exampleTag.padding(12)
@@ -182,7 +178,7 @@ struct PhotoStepView: View {
     }
 
     private func thumbnail(_ photo: DiagnosisPhoto) -> some View {
-        Color.clear
+        Palette.canvas
             .frame(maxWidth: .infinity)
             .frame(height: 120)
             .overlay {
@@ -193,7 +189,7 @@ struct PhotoStepView: View {
                         Image(name).resizable()
                     }
                 }
-                .scaledToFill()
+                .scaledToFit()
             }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(alignment: .topLeading) {

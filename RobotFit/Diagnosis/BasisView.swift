@@ -96,7 +96,7 @@ struct BasisView: View {
                         .padding(.top, 8)
                 }
 
-                DisclosureCard(title: "가정값과 출처", assumed: true) {
+                DisclosureCard(title: "추정값과 출처", assumed: true) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(sources, id: \.self) { line in
                             Text("· \(line)")

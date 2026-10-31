@@ -5,6 +5,7 @@ struct RobotPresentation {
     let rank: Int
     let store: StoreProfile
     let kitchen: Kitchen
+    let kitchenKnown: Bool
     let diag: DiagnosisSummary
 
     var robot: Robot { result.robot }
@@ -35,7 +36,10 @@ struct RobotPresentation {
 
     var marginW: Double? { robot.sizeCm.map { store.fryLineCm.w - $0.w } }
     var marginD: Double? { robot.sizeCm.map { ((store.fryLineCm.d - $0.d) * 10).rounded() / 10 } }
-    var frontWidth: Double? { robot.sizeCm.map { ((min(kitchen.widthM, kitchen.depthM) * 100 - $0.d) * 10).rounded() / 10 } }
+    var frontWidth: Double? {
+        guard kitchenKnown else { return nil }
+        return robot.sizeCm.map { ((min(kitchen.widthM, kitchen.depthM) * 100 - $0.d) * 10).rounded() / 10 }
+    }
 
     var fitShort: String {
         guard let w = marginW else { return "현장 확인 필요" }
@@ -103,7 +107,7 @@ struct RobotPresentation {
     static func all(model: DiagnosisModel) -> [RobotPresentation] {
         let evaluation = model.evaluation
         return Engine.ranked(evaluation.results).enumerated().map { index, result in
-            RobotPresentation(result: result, rank: index, store: model.store, kitchen: model.kitchen, diag: evaluation.diag)
+            RobotPresentation(result: result, rank: index, store: model.store, kitchen: model.kitchen, kitchenKnown: model.kitchenKnown, diag: evaluation.diag)
         }
     }
 }

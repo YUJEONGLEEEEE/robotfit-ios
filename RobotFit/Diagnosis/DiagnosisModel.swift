@@ -77,15 +77,34 @@ enum DiagnosisRoute: Hashable {
     case compareRobots([String])
 }
 
-enum EditedField: Hashable {
+enum EditedField: Hashable, CaseIterable {
     case region
     case kitchen
     case fryLine
+    case threePhase
+    case hood
     case weekday
     case busyDay
     case peak
     case soloLimit
     case reducedStaff
+
+    static let required: [EditedField] = [.region, .fryLine, .threePhase, .hood, .weekday, .reducedStaff]
+
+    var label: String {
+        switch self {
+        case .region: "가게 위치"
+        case .kitchen: "주방 크기"
+        case .fryLine: "설치 가능 위치"
+        case .threePhase: "3상 전원"
+        case .hood: "배기 후드"
+        case .weekday: "평일 판매량"
+        case .busyDay: "금·토 판매량"
+        case .peak: "피크타임 판매량"
+        case .soloLimit: "혼자 튀길 수 있는 양"
+        case .reducedStaff: "인력 감소 시간"
+        }
+    }
 }
 
 enum AppTab: Hashable {
@@ -98,7 +117,7 @@ enum AppTab: Hashable {
 final class DiagnosisModel {
     var selectedTab = AppTab.diagnosis
     var path: [DiagnosisRoute] = []
-    var store = StoreProfile.minsu
+    var store = StoreProfile.blank
     var kitchen = Kitchen.minsu
     var scannedModelURL: URL?
     var edited: Set<EditedField> = []
@@ -136,8 +155,46 @@ final class DiagnosisModel {
         !edited.contains(field)
     }
 
-    func start() {
+    var missingFields: [EditedField] {
+        EditedField.required.filter { !edited.contains($0) }
+    }
+
+    var isReady: Bool { missingFields.isEmpty }
+
+    var kitchenKnown: Bool { edited.contains(.kitchen) }
+
+    var displayKitchen: Kitchen {
+        guard !kitchenKnown else { return kitchen }
+        let line = store.fryLineCm
+        return Kitchen(
+            widthM: max(2.0, (line.d + kitchen.worktableCm + 90) / 100),
+            depthM: max(3.0, (line.w + 60) / 100),
+            heightM: kitchen.heightM,
+            worktableCm: kitchen.worktableCm
+        )
+    }
+
+    func fillExample() {
         store = .minsu
+        if !kitchenKnown {
+            kitchen = .minsu
+        }
+        edited.formUnion(EditedField.allCases)
+    }
+
+    func setWeekday(_ value: Double) {
+        store.sales.weekday = value
+        edited.insert(.weekday)
+        if !edited.contains(.busyDay) {
+            store.sales.busyDay = value
+        }
+        if !edited.contains(.peak) {
+            store.peakPerHour = max(1, (value * StoreProfile.peakPerWeekdaySale).rounded())
+        }
+    }
+
+    func start() {
+        store = .blank
         kitchen = .minsu
         scannedModelURL = nil
         edited = []
@@ -154,6 +211,7 @@ final class DiagnosisModel {
         }
         if let hood = analysis.hasExhaustHood {
             store.hasExhaustHood = hood
+            edited.insert(.hood)
         }
     }
 
@@ -182,23 +240,26 @@ final class DiagnosisModel {
     }
 
     func diagnose(_ saved: SavedStore) {
-        let base = StoreProfile.minsu
-        let weekday = saved.weekday ?? base.sales.weekday
-        let peakRatio = base.peakPerHour / base.sales.weekday
-        var profile = base
-        profile.name = saved.name
-        profile.region = saved.isGyeongbuk ? .gyeongbuk : .other
-        profile.sales.weekday = weekday
-        profile.sales.busyDay = saved.busyDay ?? weekday
-        profile.peakPerHour = saved.peak ?? max(1, (weekday * peakRatio).rounded())
-        store = profile
+        store = .blank
+        store.name = saved.name
         kitchen = .minsu
         scannedModelURL = nil
-        var given: Set<EditedField> = [.region]
-        if saved.weekday != nil { given.insert(.weekday) }
-        if saved.busyDay != nil { given.insert(.busyDay) }
-        if saved.peak != nil { given.insert(.peak) }
-        edited = given
+        edited = []
+        if saved.address != nil {
+            store.region = saved.isGyeongbuk ? .gyeongbuk : .other
+            edited.insert(.region)
+        }
+        if let busy = saved.busyDay {
+            store.sales.busyDay = busy
+            edited.insert(.busyDay)
+        }
+        if let peak = saved.peak {
+            store.peakPerHour = peak
+            edited.insert(.peak)
+        }
+        if let weekday = saved.weekday {
+            setWeekday(weekday)
+        }
         kitchenPhotos = []
         menuPhotos = []
         analysis = .example

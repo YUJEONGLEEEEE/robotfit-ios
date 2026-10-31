@@ -178,6 +178,7 @@ final class DiagnosisModel {
     var menuPhotos: [DiagnosisPhoto] = []
     var analysis = PhotoAnalysis.example
     var diagnosedAt: Date?
+    var toast: String?
     var savedStores: [SavedStore] = [] {
         didSet { persistStores() }
     }
@@ -402,6 +403,14 @@ final class DiagnosisModel {
             ),
             at: 0
         )
+    }
+
+    func showToast(_ text: String) {
+        toast = text
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            if toast == text { toast = nil }
+        }
     }
 
     func showQuotes() {

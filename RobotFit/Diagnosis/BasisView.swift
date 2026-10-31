@@ -31,7 +31,7 @@ struct BasisView: View {
                 )
 
                 DisclosureCard(title: "줄어드는 인건비", systemImage: "person.2", tint: Palette.bad, expanded: true) {
-                    Formula(text: "저녁 알바 하루 \(Format.number(store.reducedStaffHoursPerDay))시간 × 주 6일 = 주 \(Format.number(weeklyHours))시간" + (weeklyHours >= 15 ? "\n주 15시간 이상이라 주휴수당이 붙어요." : ""))
+                    Formula(text: "저녁 알바 하루 \(Format.number(store.reducedStaffHoursPerDay))시간 × 주 6일 = 주 \(Format.number(weeklyHours))시간" + (model.isAssumed(.reducedStaff) ? "\n입력하지 않아 판매량 기준 추정값으로 계산했어요." : "") + (weeklyHours >= 15 ? "\n주 15시간 이상이라 주휴수당이 붙어요." : ""))
                     Formula(text: "시간당 단가 (가정값)\n최저임금 월 환산 2,156,880원 ÷ 174시간 × 1.2 = \(wage)\n174시간은 주휴 포함 월 소정근로시간, 1.2는 4대보험·퇴직금 몫이에요.")
                     LineRow(label: "\(Format.number(store.reducedStaffHoursPerDay))시간 × \(wage) × \(days)일", value: "월 \(Format.manWon(diag.removedStaffMonthlyKrw))", strong: true)
                     if diag.cleaningStaffMonthlyKrw > 0 {

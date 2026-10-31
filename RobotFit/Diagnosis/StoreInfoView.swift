@@ -10,7 +10,7 @@ struct StoreInfoView: View {
     @State private var weeklyHours = ""
     @State private var loaded = false
 
-    private let required: [EditedField] = [.weekday, .reducedStaff]
+    private let required: [EditedField] = [.weekday]
 
     var body: some View {
         let missing = required.filter { !model.edited.contains($0) }
@@ -64,8 +64,31 @@ struct StoreInfoView: View {
                     .padding(.horizontal, 4)
                     .padding(.top, 8)
 
-                header("인력 감소 시간", caption: "로봇이 대신할 인력비용을 계산해서 알려줘요")
+                header("인력 감소 시간", caption: "로봇을 들이면 줄일 알바 근무 시간이에요. 지금 튀김 담당 알바가 주에 몇 시간 일하는지 떠올려 보세요.")
                 FieldBox(text: $weeklyHours, placeholder: "주당 시간을 입력해주세요", unit: "주방 알바", keyboard: .decimalPad)
+                if suggestedWeekly > 0, Double(weeklyHours) != suggestedWeekly {
+                    Button {
+                        weeklyHours = Self.text(suggestedWeekly)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                            Text("판매량 기준 추천: 주 \(Format.number(suggestedWeekly))시간")
+                            Spacer()
+                            Text("적용")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Palette.ink, in: Capsule())
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Palette.action.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .padding(.top, 8)
+                }
                 Text(staffNote)
                     .font(.system(size: 12))
                     .foregroundStyle(Palette.sub)
@@ -103,6 +126,7 @@ struct StoreInfoView: View {
                 model.confirm(.reducedStaff)
             } else {
                 model.edited.remove(.reducedStaff)
+                model.applySuggestedStaff()
             }
         }
     }
@@ -112,9 +136,20 @@ struct StoreInfoView: View {
         return model.store.region == .gyeongbuk ? "경북" : "경북 외 지역"
     }
 
+    private var suggestedWeekly: Double {
+        model.suggestedStaffHoursPerDay * 6
+    }
+
+    private static func text(_ value: Double) -> String {
+        Format.number(value).replacingOccurrences(of: ",", with: "")
+    }
+
     private var staffNote: String {
         guard let hours = Double(weeklyHours), model.edited.contains(.reducedStaff) else {
-            return "주 15시간이 넘으면 주휴수당이 포함된 단가(시간당 \(Format.won(Assumptions.hourlyLaborKrw)))로 계산해요."
+            if suggestedWeekly > 0 {
+                return "비워 두면 판매량 기준 추천값(주 \(Format.number(suggestedWeekly))시간)으로 계산해요."
+            }
+            return "비워 두면 평일 판매량을 넣은 뒤 판매량 기준 추천값으로 계산해요."
         }
         if hours == 0 { return "줄어드는 근무가 없으면 로봇 비용을 회수할 수 없어요." }
         if hours >= 15 { return "주 15시간이 넘어서 주휴수당이 포함된 단가(시간당 \(Format.won(Assumptions.hourlyLaborKrw)))로 계산해요." }

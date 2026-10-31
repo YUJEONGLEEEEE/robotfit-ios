@@ -12,6 +12,7 @@ struct RobotFitApp: App {
                 .environment(auth)
                 .environment(community)
                 .environment(diagnosis)
+                .dismissesKeyboardOnTap()
         }
     }
 }

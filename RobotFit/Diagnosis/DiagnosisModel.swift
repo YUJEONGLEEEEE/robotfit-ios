@@ -70,11 +70,11 @@ enum DiagnosisRoute: Hashable {
     case diagnosing
     case result
     case compare
-    case size
-    case detail(String)
     case basis(String)
     case notRecommended(String)
     case quote(String)
+    case robot(String)
+    case compareRobots([String])
 }
 
 enum EditedField: Hashable {

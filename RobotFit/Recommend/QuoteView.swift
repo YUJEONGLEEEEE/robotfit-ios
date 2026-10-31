@@ -78,7 +78,7 @@ struct QuoteView: View {
                 Card {
                     HStack(spacing: 12) {
                         IconTile(systemName: "doc.text.fill", tint: .blue)
-                        Text("요청서 내용")
+                        Text("견적 조건")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundStyle(Palette.ink)
                     }
@@ -133,18 +133,6 @@ struct QuoteView: View {
                                 .font(.system(size: 12))
                                 .foregroundStyle(Palette.sub)
                         }
-                        let sent = model.hasRequested(robot.id, option: offer.id)
-                        Button {
-                            withAnimation(.snappy) { model.requestQuote(robot, option: offer.id) }
-                        } label: {
-                            Text(sent ? "요청 보냄(시연)" : "요청 보내기(시연)")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(sent ? Palette.faint : Palette.ink)
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .overlay(Capsule().stroke(Palette.line, lineWidth: 1))
-                        }
-                        .disabled(sent)
-                        .padding(.top, 14)
                     }
                 }
 
@@ -161,6 +149,7 @@ struct QuoteView: View {
             .padding(.bottom, 24)
         }
         .screenChrome("판매처별 견적 확인하기")
+        .onAppear { model.recordQuote(robot) }
         .safeAreaInset(edge: .bottom) {
             FooterButtons {
                 PrimaryButton(title: "견적 기록 보기") { model.showQuotes() }
@@ -173,7 +162,6 @@ struct QuoteView: View {
             "가격·설치비·유지보수는 공급사 카탈로그 공개 자료 기준이에요.",
             "한 달에 내는 돈은 자부담을 \(Int(Assumptions.robotCostMonths))개월로 나누고 전기료를 더한 추정값이에요.",
             "지원사업 금액은 다음 공고 기준 예상치라 선정 여부에 따라 달라져요.",
-            "요청 보내기는 시연용이라 실제로 발송되지 않아요.",
         ]
     }
 

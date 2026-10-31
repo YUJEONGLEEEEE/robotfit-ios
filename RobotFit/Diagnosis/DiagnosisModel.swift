@@ -102,6 +102,16 @@ struct SavedStore: Identifiable, Codable, Hashable {
     var isComplete: Bool { weekday != nil }
 }
 
+struct QuoteRecord: Identifiable, Codable, Hashable {
+    var id: String
+    var robotID: String
+    var robotName: String
+    var supplier: String
+    var option: String
+    var summary: String
+    var date: Date
+}
+
 enum DiagnosisRoute: Hashable {
     case kitchenPhotos
     case menuPhotos
@@ -151,6 +161,7 @@ enum EditedField: Hashable, CaseIterable {
 
 enum AppTab: Hashable {
     case diagnosis
+    case quotes
     case community
     case my
 }
@@ -171,12 +182,21 @@ final class DiagnosisModel {
         didSet { persistStores() }
     }
 
+    var quoteRecords: [QuoteRecord] = [] {
+        didSet { persistQuotes() }
+    }
+
     private let storesKey = "diagnosis.savedStores"
+    private let quotesKey = "diagnosis.quoteRecords"
 
     init() {
         if let data = UserDefaults.standard.data(forKey: storesKey),
            let stores = try? JSONDecoder().decode([SavedStore].self, from: data) {
             savedStores = stores
+        }
+        if let data = UserDefaults.standard.data(forKey: quotesKey),
+           let records = try? JSONDecoder().decode([QuoteRecord].self, from: data) {
+            quoteRecords = records
         }
     }
 
@@ -348,6 +368,42 @@ final class DiagnosisModel {
         menuPhotos = []
         analysis = .example
         path = [.kitchenPhotos]
+    }
+
+    var requestSummary: String {
+        let size = "주방 \(Format.number(kitchen.widthM))×\(Format.number(kitchen.depthM))m"
+        let line = store.fryLineCm.w > 0 ? ", 튀김 라인 \(Format.number(store.fryLineCm.w))×\(Format.number(store.fryLineCm.d))cm" : ""
+        return size + line
+    }
+
+    func hasRequested(_ robotID: String, option: String) -> Bool {
+        quoteRecords.contains { $0.robotID == robotID && $0.option == option }
+    }
+
+    func requestQuote(_ robot: Robot, option: String) {
+        guard !hasRequested(robot.id, option: option) else { return }
+        quoteRecords.insert(
+            QuoteRecord(
+                id: UUID().uuidString,
+                robotID: robot.id,
+                robotName: robot.displayName,
+                supplier: robot.supplier ?? "공급사",
+                option: option,
+                summary: requestSummary,
+                date: .now
+            ),
+            at: 0
+        )
+    }
+
+    func showQuotes() {
+        selectedTab = .quotes
+    }
+
+    private func persistQuotes() {
+        if let data = try? JSONEncoder().encode(quoteRecords) {
+            UserDefaults.standard.set(data, forKey: quotesKey)
+        }
     }
 
     private func persistStores() {

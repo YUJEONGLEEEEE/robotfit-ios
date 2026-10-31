@@ -28,7 +28,7 @@ struct DiagnosisTab: View {
         case .compare: RecommendView()
         case .basis(let id): BasisView(robotID: id)
         case .notRecommended(let id): NotRecommendedView(robotID: id)
-        case .quote: PendingView(title: "판매처 조건 비교")
+        case .quote(let id): QuoteView(robotID: id)
         case .robot(let id): RecommendDetailView(robotID: id)
         case .compareRobots(let ids): RobotCompareView(robotIDs: ids)
         }

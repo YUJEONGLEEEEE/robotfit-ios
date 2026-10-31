@@ -34,7 +34,7 @@ struct ScanView: View {
             Spacer()
             Image(systemName: "viewfinder")
                 .font(.system(size: 64))
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color.accentColor)
             Text("휴대폰으로 주방을 천천히 비춰 주세요")
                 .font(.title3.bold())
             Text("벽과 설비를 인식해 주방 크기를 재고\n로봇이 들어가는지 바로 알려 드려요")
@@ -61,7 +61,7 @@ struct ScanView: View {
     }
 }
 
-private struct RoomScanScreen: View {
+struct RoomScanScreen: View {
     let onFinish: (CapturedRoom) -> Void
     let onCancel: () -> Void
 
@@ -88,7 +88,7 @@ private struct RoomScanScreen: View {
                         .disabled(stopRequested)
                 }
             }
-            .tint(.orange)
+            .tint(Color.accentColor)
             .padding()
         }
     }

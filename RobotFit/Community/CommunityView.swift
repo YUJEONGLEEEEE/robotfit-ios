@@ -11,7 +11,7 @@ struct CommunityView: View {
                 if let message = store.message {
                     Text(message)
                         .font(.footnote)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 let summaries = Catalog.robots.compactMap { robot in
@@ -76,11 +76,11 @@ struct ReviewRow: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.orange.opacity(0.15), in: Capsule())
+                    .background(Color.accentColor.opacity(0.15), in: Capsule())
                 Spacer()
                 Text(String(repeating: "★", count: review.rating) + String(repeating: "☆", count: 5 - review.rating))
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
             }
             Text("\(review.storeType) · 실제 회수 \(review.paybackMonths)개월")
                 .font(.subheadline.bold())

@@ -239,7 +239,6 @@ struct MyView: View {
 
 private struct AccountView: View {
     @Environment(AuthStore.self) private var auth
-    @Environment(CommunityStore.self) private var community
     @State private var isRenaming = false
     @State private var newName = ""
 
@@ -251,16 +250,6 @@ private struct AccountView: View {
                 Button("이름 변경") {
                     newName = auth.displayName
                     isRenaming = true
-                }
-            }
-            Section("내가 쓴 후기") {
-                let mine = community.reviews(by: auth.userID)
-                if mine.isEmpty {
-                    Text("아직 쓴 후기가 없어요.")
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(mine) { review in
-                    ReviewRow(review: review)
                 }
             }
             Section {

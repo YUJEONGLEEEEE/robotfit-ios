@@ -10,16 +10,13 @@ struct RootView: View {
                 @Bindable var diagnosis = diagnosis
                 TabView(selection: $diagnosis.selectedTab) {
                     DiagnosisTab()
-                        .tabItem { Label("진단", systemImage: "stethoscope") }
+                        .tabItem { Label("홈", image: "TabHome") }
                         .tag(AppTab.diagnosis)
                     QuoteHistoryView()
-                        .tabItem { Label("견적 기록", systemImage: "doc.text") }
+                        .tabItem { Label("견적 기록", image: "TabQuotes") }
                         .tag(AppTab.quotes)
-                    CommunityView()
-                        .tabItem { Label("커뮤니티", systemImage: "bubble.left.and.bubble.right") }
-                        .tag(AppTab.community)
                     MyView()
-                        .tabItem { Label("마이", systemImage: "person") }
+                        .tabItem { Label("마이페이지", image: "TabMy") }
                         .tag(AppTab.my)
                 }
             } else {

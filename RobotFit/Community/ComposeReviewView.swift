@@ -40,6 +40,7 @@ struct ComposeReviewView: View {
                         .foregroundStyle(Color.accentColor)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("후기 쓰기")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

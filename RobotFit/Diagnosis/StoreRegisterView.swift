@@ -270,6 +270,7 @@ private struct PlaceSearchSheet: View {
                     }
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: prompt)
             .onSubmit(of: .search) { Task { await search() } }
             .navigationTitle(title)

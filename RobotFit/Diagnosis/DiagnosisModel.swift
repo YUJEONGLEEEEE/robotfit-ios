@@ -105,6 +105,8 @@ struct SavedStore: Identifiable, Codable, Hashable {
 enum DiagnosisRoute: Hashable {
     case kitchenPhotos
     case menuPhotos
+    case kitchenConfirm
+    case kitchenEdit
     case storeInfo
     case analyzing
     case diagnosing
@@ -245,12 +247,38 @@ final class DiagnosisModel {
         }
     }
 
-    func start() {
+    private func reset() {
         store = .blank
         kitchen = .minsu
         scannedModelURL = nil
         edited = []
         aiEstimated = []
+    }
+
+    private func prefill(_ saved: SavedStore) {
+        store.name = saved.name
+        if saved.address != nil {
+            store.region = saved.isGyeongbuk ? .gyeongbuk : .other
+            edited.insert(.region)
+        }
+        if let busy = saved.busyDay {
+            store.sales.busyDay = busy
+            edited.insert(.busyDay)
+        }
+        if let peak = saved.peak {
+            store.peakPerHour = peak
+            edited.insert(.peak)
+        }
+        if let weekday = saved.weekday {
+            setWeekday(weekday)
+        }
+    }
+
+    func start() {
+        reset()
+        if let saved = savedStores.last(where: \.isComplete) ?? savedStores.last {
+            prefill(saved)
+        }
         kitchenPhotos = []
         menuPhotos = []
         analysis = .example
@@ -314,27 +342,8 @@ final class DiagnosisModel {
     }
 
     func diagnose(_ saved: SavedStore) {
-        store = .blank
-        store.name = saved.name
-        kitchen = .minsu
-        scannedModelURL = nil
-        edited = []
-        aiEstimated = []
-        if saved.address != nil {
-            store.region = saved.isGyeongbuk ? .gyeongbuk : .other
-            edited.insert(.region)
-        }
-        if let busy = saved.busyDay {
-            store.sales.busyDay = busy
-            edited.insert(.busyDay)
-        }
-        if let peak = saved.peak {
-            store.peakPerHour = peak
-            edited.insert(.peak)
-        }
-        if let weekday = saved.weekday {
-            setWeekday(weekday)
-        }
+        reset()
+        prefill(saved)
         kitchenPhotos = []
         menuPhotos = []
         analysis = .example

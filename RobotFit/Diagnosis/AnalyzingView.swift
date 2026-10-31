@@ -103,7 +103,7 @@ struct AnalyzingView: View {
         guard model.path.last == .analyzing else { return }
         model.applyAnalysis(analysis)
         model.path.removeLast()
-        model.path.append(.storeInfo)
+        model.path.append(.kitchenConfirm)
     }
 
     private func analyzeStore() async {

@@ -1,3 +1,4 @@
+import Metal
 import SceneKit
 import SwiftUI
 import UIKit
@@ -72,6 +73,14 @@ struct Kitchen3DView: View {
         } else {
             basket.runAction(moveAction)
         }
+    }
+
+    static func snapshot(of url: URL, size: CGSize = CGSize(width: 600, height: 450)) -> UIImage? {
+        guard let built = scannedScene(url) else { return nil }
+        let renderer = SCNRenderer(device: MTLCreateSystemDefaultDevice(), options: nil)
+        renderer.scene = built.scene
+        renderer.pointOfView = built.camera
+        return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
     }
 
     private static func scannedScene(_ url: URL) -> Built? {

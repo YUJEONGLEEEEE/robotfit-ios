@@ -90,7 +90,6 @@ enum EditedField: Hashable {
 
 enum AppTab: Hashable {
     case diagnosis
-    case scan
     case community
     case my
 }

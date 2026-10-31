@@ -48,23 +48,18 @@ private struct DiagnosisHome: View {
                         .font(.system(size: 26, weight: .bold))
                         .foregroundStyle(Palette.ink)
                         .lineSpacing(4)
-                    Text("주방 사진과 메뉴판만 있으면\n조리로봇이 들어가는지, 언제 본전인지 알려 드려요.")
+                    Text("주방 사진과 메뉴판만 있으면\n우리 가게에 딱 맞는 조리로봇은 무엇인지,\n언제 투자금을 회수하는지 알려드려요.")
                         .font(.system(size: 15))
                         .foregroundStyle(Palette.sub)
                         .lineSpacing(3)
                         .padding(.top, 12)
-                    Color.clear
-                        .aspectRatio(322.0 / 332.0, contentMode: .fit)
+                    Image("HomeRobot")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 245, height: 251)
                         .frame(maxWidth: .infinity)
-                        .overlay {
-                            Image("HeroKitchen")
-                                .resizable()
-                                .scaledToFill()
-                                .scaleEffect(1.19)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                         .padding(.top, 24)
-                        .accessibilityLabel("튀김기 옆에서 일하는 튀김로봇 일러스트")
+                        .accessibilityLabel("셰프 모자를 쓴 로봇핏 캐릭터")
                     PrimaryButton(title: "우리 가게 진단 시작하기") {
                         model.start()
                     }

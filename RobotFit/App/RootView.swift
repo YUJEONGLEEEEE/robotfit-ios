@@ -12,9 +12,6 @@ struct RootView: View {
                     DiagnosisTab()
                         .tabItem { Label("진단", systemImage: "stethoscope") }
                         .tag(AppTab.diagnosis)
-                    ScanView()
-                        .tabItem { Label("주방 스캔", systemImage: "viewfinder") }
-                        .tag(AppTab.scan)
                     CommunityView()
                         .tabItem { Label("커뮤니티", systemImage: "bubble.left.and.bubble.right") }
                         .tag(AppTab.community)

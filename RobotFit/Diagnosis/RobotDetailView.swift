@@ -112,6 +112,11 @@ struct RobotDetailView: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle(robot.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            FooterButtons {
+                PrimaryButton(title: "판매처 조건 비교 보기") { model.path.append(.quote(robotID)) }
+            }
+        }
     }
 
     private func heroTitle(_ result: RobotResult) -> String {

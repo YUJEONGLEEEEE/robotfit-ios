@@ -48,6 +48,19 @@ struct DiagnosisPhoto: Identifiable {
     static let menuExample = DiagnosisPhoto(image: nil, sampleName: "SampleMenu")
 }
 
+struct SavedStore: Identifiable, Codable, Hashable {
+    var id: String
+    var name: String
+    var isGyeongbuk: Bool
+    var regionLabel: String
+    var address: String?
+    var weekday: Double?
+    var busyDay: Double?
+    var peak: Double?
+
+    var isComplete: Bool { weekday != nil }
+}
+
 enum DiagnosisRoute: Hashable {
     case kitchenPhotos
     case menuPhotos
@@ -59,6 +72,7 @@ enum DiagnosisRoute: Hashable {
     case detail(String)
     case basis(String)
     case notRecommended(String)
+    case quote(String)
 }
 
 enum EditedField: Hashable {
@@ -72,8 +86,16 @@ enum EditedField: Hashable {
     case reducedStaff
 }
 
+enum AppTab: Hashable {
+    case diagnosis
+    case scan
+    case community
+    case my
+}
+
 @Observable
 final class DiagnosisModel {
+    var selectedTab = AppTab.diagnosis
     var path: [DiagnosisRoute] = []
     var store = StoreProfile.minsu
     var kitchen = Kitchen.minsu
@@ -81,6 +103,18 @@ final class DiagnosisModel {
     var kitchenPhotos: [DiagnosisPhoto] = []
     var menuPhotos: [DiagnosisPhoto] = []
     var analysis = PhotoAnalysis.example
+    var savedStores: [SavedStore] = [] {
+        didSet { persistStores() }
+    }
+
+    private let storesKey = "diagnosis.savedStores"
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: storesKey),
+           let stores = try? JSONDecoder().decode([SavedStore].self, from: data) {
+            savedStores = stores
+        }
+    }
 
     static let maxPhotos = 4
 
@@ -129,5 +163,39 @@ final class DiagnosisModel {
 
     func rediagnose() {
         path = [.storeInfo]
+    }
+
+    func save(_ saved: SavedStore) {
+        savedStores.removeAll { $0.id == saved.id }
+        savedStores.append(saved)
+    }
+
+    func diagnose(_ saved: SavedStore) {
+        let base = StoreProfile.minsu
+        let weekday = saved.weekday ?? base.sales.weekday
+        let peakRatio = base.peakPerHour / base.sales.weekday
+        var profile = base
+        profile.name = saved.name
+        profile.region = saved.isGyeongbuk ? .gyeongbuk : .other
+        profile.sales.weekday = weekday
+        profile.sales.busyDay = saved.busyDay ?? weekday
+        profile.peakPerHour = saved.peak ?? max(1, (weekday * peakRatio).rounded())
+        store = profile
+        kitchen = .minsu
+        var given: Set<EditedField> = [.region]
+        if saved.weekday != nil { given.insert(.weekday) }
+        if saved.busyDay != nil { given.insert(.busyDay) }
+        if saved.peak != nil { given.insert(.peak) }
+        edited = given
+        kitchenPhotos = []
+        menuPhotos = []
+        analysis = .example
+        path = [.kitchenPhotos]
+    }
+
+    private func persistStores() {
+        if let data = try? JSONEncoder().encode(savedStores) {
+            UserDefaults.standard.set(data, forKey: storesKey)
+        }
     }
 }

@@ -19,6 +19,7 @@ struct DiagnosisTab: View {
                     case .detail(let id): RobotDetailView(robotID: id)
                     case .basis(let id): BasisView(robotID: id)
                     case .notRecommended(let id): NotRecommendedView(robotID: id)
+                    case .quote: PendingView(title: "판매처 조건 비교")
                     }
                 }
         }

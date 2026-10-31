@@ -36,6 +36,11 @@ struct Robot: Decodable, Identifiable, Hashable {
         let note: String?
     }
 
+    struct Source: Decodable, Hashable {
+        let fields: [String]
+        let title: String
+    }
+
     struct Maintenance: Decodable, Hashable {
         let monthlyKrw: Double
         let freeMonths: Int
@@ -60,6 +65,7 @@ struct Robot: Decodable, Identifiable, Hashable {
     let domestic: Bool?
     let robotTasks: [String]
     let humanTasks: [String]
+    let sources: [Source]?
 }
 
 enum Catalog {

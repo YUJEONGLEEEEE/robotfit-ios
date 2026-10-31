@@ -64,7 +64,7 @@ struct MyView: View {
 
                     Card(padding: 8) {
                         link("출처·라이선스", icon: "doc.text.fill", tint: .teal) {
-                            PendingView(title: "출처·라이선스")
+                            SourcesView()
                         }
                         Divider().padding(.horizontal, 12)
                         link("성과 리포트", icon: "chart.bar.fill", tint: .purple, tag: "샘플", sub: "도입 후 달라진 점을 한눈에 봐요") {

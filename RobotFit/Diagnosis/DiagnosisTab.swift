@@ -23,12 +23,12 @@ struct DiagnosisTab: View {
         case .analyzing: AnalyzingView(mode: .photos)
         case .diagnosing: AnalyzingView(mode: .store)
         case .result: ResultView()
-        case .compare: CompareView()
-        case .size: SizeView()
-        case .detail(let id): RobotDetailView(robotID: id)
+        case .compare: RecommendView()
         case .basis(let id): BasisView(robotID: id)
         case .notRecommended(let id): NotRecommendedView(robotID: id)
         case .quote: PendingView(title: "판매처 조건 비교")
+        case .robot(let id): RecommendDetailView(robotID: id)
+        case .compareRobots(let ids): RobotCompareView(robotIDs: ids)
         }
     }
 }

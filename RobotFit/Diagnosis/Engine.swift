@@ -77,7 +77,7 @@ struct Kitchen: Equatable {
         Int((widthM * depthM / 3.3058).rounded())
     }
 
-    static let minsu = Kitchen(widthM: 4.4, depthM: 3.0, heightM: 2.7, worktableCm: 60)
+    static let minsu = Kitchen(widthM: 2.2, depthM: 5.5, heightM: 2.7, worktableCm: 60)
 }
 
 enum Verdict: Int, Comparable {
@@ -315,6 +315,10 @@ enum Engine {
         }
         others.sort { $0.result.robot.displayName < $1.result.robot.displayName }
         return Comparison(compared: Array(reps.prefix(size)), others: others)
+    }
+
+    static func ranked(_ results: [RobotResult]) -> [RobotResult] {
+        results.sorted(by: ranksBefore)
     }
 
     static func breakEvenPerDay(_ sub: SubsidyResult, diag: DiagnosisSummary, replacementRate: Double) -> Int {

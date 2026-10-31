@@ -162,7 +162,6 @@ enum EditedField: Hashable, CaseIterable {
 enum AppTab: Hashable {
     case diagnosis
     case quotes
-    case community
     case my
 }
 

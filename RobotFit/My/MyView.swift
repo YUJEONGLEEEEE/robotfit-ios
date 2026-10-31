@@ -80,20 +80,18 @@ struct MyView: View {
             .sheet(isPresented: $showsAccount) {
                 NavigationStack {
                     AccountView()
-                        .toolbar { closeButton { showsAccount = false } }
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("닫기") { showsAccount = false }
+                            }
+                        }
                 }
             }
-            .sheet(isPresented: $isAddingStore) {
-                NavigationStack {
-                    StoreRegisterView(existing: nil)
-                        .toolbar { closeButton { isAddingStore = false } }
-                }
+            .navigationDestination(isPresented: $isAddingStore) {
+                StoreRegisterView(existing: nil) { diagnosis.selectedTab = .diagnosis }
             }
-            .sheet(item: $editingStore) { saved in
-                NavigationStack {
-                    StoreRegisterView(existing: saved)
-                        .toolbar { closeButton { editingStore = nil } }
-                }
+            .navigationDestination(item: $editingStore) { saved in
+                StoreRegisterView(existing: saved) { diagnosis.selectedTab = .diagnosis }
             }
         }
     }
@@ -105,8 +103,12 @@ struct MyView: View {
             ?? (!diagnosis.edited.contains(.region) ? "위치 미정" : store.region == .gyeongbuk ? "경북" : "경북 외 지역")
 
         return Button {
-            diagnosis.selectedTab = .diagnosis
-            diagnosis.path = diagnosis.isReady ? [.result] : []
+            if diagnosis.isReady {
+                diagnosis.selectedTab = .diagnosis
+                diagnosis.path = [.result]
+            } else {
+                isAddingStore = true
+            }
         } label: {
             Card {
                 HStack(spacing: 14) {
@@ -233,11 +235,6 @@ struct MyView: View {
         .buttonStyle(.plain)
     }
 
-    private func closeButton(_ action: @escaping () -> Void) -> some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button("닫기", action: action)
-        }
-    }
 }
 
 private struct AccountView: View {

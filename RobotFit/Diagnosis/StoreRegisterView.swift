@@ -18,86 +18,81 @@ struct StoreRegisterView: View {
     @State private var isSearchingAddress = false
     @State private var isConfirming = false
     @State private var isIncomplete = false
-    @FocusState private var focus: Field?
-
-    enum Field: Hashable {
-        case name
-        case weekday
-        case busyDay
-        case peak
-    }
 
     private var hasName: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
     private var noSales: Bool { number(weekday) == nil }
     private var blocked: Bool { !hasName || (existing != nil && noSales) }
 
     var body: some View {
-        Form {
-            Section {
-                Headline(title: "가게 정보를 등록해 주세요", sub: "대략적인 값도 괜찮아요. 등록한 정보는 언제든 고칠 수 있어요.")
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Headline(title: "가게 정보를 등록해 주세요", sub: "대략적인 값도 괜찮아요.\n등록한 정보는 언제든 고칠 수 있어요.")
 
-            Section {
-                HStack {
-                    Text("상호")
-                    TextField("가게 이름", text: $name)
-                        .multilineTextAlignment(.trailing)
-                        .focused($focus, equals: .name)
-                        .submitLabel(.next)
-                        .onSubmit { focus = .weekday }
-                }
+                header("가게 이름")
+                FieldBox(text: $name, placeholder: "가게 이름을 입력해주세요", unit: "상호", keyboard: .default)
                 Button {
                     isAskingListed = true
                 } label: {
                     Label("지도에서 가게 찾기", systemImage: "magnifyingglass")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.blue)
                 }
+                .padding(.horizontal, 4)
+                .padding(.top, 10)
+
+                header("가게 위치")
                 Button {
                     isSearchingAddress = true
                 } label: {
                     HStack {
-                        Text("가게 위치").foregroundStyle(.primary)
+                        Text(location?.label ?? "주소를 검색해주세요")
+                            .font(.system(size: 16))
+                            .foregroundStyle(location == nil ? Palette.faint : Palette.ink)
                         Spacer()
-                        Text(location?.label ?? "선택")
-                            .foregroundStyle(location == nil ? .secondary : .primary)
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        Text("시·도")
+                            .font(.system(size: 15))
+                            .foregroundStyle(Palette.sub)
                     }
+                    .padding(.horizontal, 16)
+                    .frame(height: 52)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.line, lineWidth: 1))
                 }
-            } footer: {
-                Text(location?.address ?? "선택 · 아직 문을 열기 전이라면 비워 두세요")
-            }
+                Text(location?.address ?? "아직 문을 열기 전이라면 비워 두세요")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.sub)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 8)
 
-            Section {
-                salesField("평일 하루", text: $weekday, field: .weekday, next: .busyDay, helper: "진단하려면 꼭 필요해요")
-                salesField("금·토 하루", text: $busyDay, field: .busyDay, next: .peak, helper: "비워 두면 평일과 같게 계산해요")
-                salesField("피크타임 1시간", text: $peak, field: .peak, next: nil, helper: "비워 두면 평일 판매량으로 추정해요")
-            } header: {
-                Text("평균 판매량")
-            } footer: {
-                if !hasName {
-                    Text("상호를 넣으면 등록할 수 있어요.")
-                } else if blocked {
-                    Text("평일 하루 판매량을 넣으면 진단할 수 있어요.")
-                } else {
-                    Text("로봇의 생산능력을 비교해서 알려드려요")
-                }
+                header("평균 판매량")
+                salesField("평일 하루", text: $weekday, helper: "진단하려면 꼭 필요해요")
+                salesField("금·토 하루", text: $busyDay, helper: "비워 두면 평일과 같게 계산해요")
+                salesField("피크 타임 1시간", text: $peak, helper: "비워 두면 평일 판매량으로 추정해요")
             }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
         }
-        .navigationTitle("내 가게 등록")
-        .navigationBarTitleDisplayMode(.inline)
+        .scrollDismissesKeyboard(.interactively)
+        .screenChrome("내 가게 등록")
         .safeAreaInset(edge: .bottom) {
             FooterButtons {
-                PrimaryButton(title: "등록하기") {
+                if !hasName {
+                    Text("가게 이름을 넣으면 등록할 수 있어요.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Palette.sub)
+                } else if blocked {
+                    Text("평일 하루 판매량을 넣으면 진단할 수 있어요.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Palette.sub)
+                }
+                PrimaryButton(title: "등록하기", enabled: !blocked) {
                     if noSales { isIncomplete = true } else { isConfirming = true }
                 }
-                .disabled(blocked)
-                .opacity(blocked ? 0.4 : 1)
             }
         }
         .onAppear(perform: load)
         .alert("지도에 등록된 가게인가요?", isPresented: $isAskingListed) {
-            Button("아니오", role: .cancel) { focus = .name }
+            Button("아니오", role: .cancel) {}
             Button("예") { isSearchingPlace = true }
         } message: {
             Text("지도에 있는 가게라면\n이름으로 찾아 위치까지 한 번에 넣어요.")
@@ -124,9 +119,7 @@ struct StoreRegisterView: View {
             PlaceSearchSheet(title: "가게 찾기", prompt: "가게 이름과 동네 (예: 민수네 치킨 포항)", restaurantsOnly: true) { item in
                 name = item.name ?? name
                 location = PickedLocation(item)
-            } onManual: {
-                focus = .name
-            }
+            } onManual: {}
         }
         .sheet(isPresented: $isSearchingAddress) {
             PostcodeSheet { picked in
@@ -135,32 +128,32 @@ struct StoreRegisterView: View {
         }
     }
 
-    private func salesField(_ label: String, text: Binding<String>, field: Field, next: Field?, helper: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(label)
-                TextField("0", text: text)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(.trailing)
-                    .focused($focus, equals: field)
-                    .onChange(of: text.wrappedValue) { _, value in
-                        let digits = String(value.filter(\.isNumber).prefix(4))
-                        if digits != value { text.wrappedValue = digits }
-                    }
-                Text("마리").foregroundStyle(.secondary)
-            }
-            Text(helper)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .toolbar {
-            if focus == field {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(next == nil ? "완료" : "다음") { focus = next }
+    private func header(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 17, weight: .bold))
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 4)
+            .padding(.top, 28)
+            .padding(.bottom, 10)
+    }
+
+    private func salesField(_ label: String, text: Binding<String>, helper: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 4)
+            FieldBox(text: text, placeholder: "0", unit: "개", keyboard: .numberPad)
+                .onChange(of: text.wrappedValue) { _, value in
+                    let digits = String(value.filter(\.isNumber).prefix(4))
+                    if digits != value { text.wrappedValue = digits }
                 }
-            }
+            Text(helper)
+                .font(.system(size: 12))
+                .foregroundStyle(Palette.sub)
+                .padding(.horizontal, 4)
         }
+        .padding(.bottom, 12)
     }
 
     private func number(_ text: String) -> Double? {

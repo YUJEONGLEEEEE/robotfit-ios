@@ -82,9 +82,14 @@ struct AnalyzingView: View {
     }
 
     private func readPhotos() async {
-        let analysis = PhotoAnalysis.example
         bubbles = [Bubble(text: "메뉴판 읽는 중", live: true)]
+        let kitchen = model.kitchenPhotos.compactMap(\.image)
+        let menu = model.menuPhotos.compactMap(\.image)
+        async let result = kitchen.isEmpty && menu.isEmpty
+            ? PhotoAnalysis.example
+            : PhotoAnalysisClient.analyze(kitchen: kitchen, menu: menu)
         try? await Task.sleep(for: .milliseconds(1400))
+        let analysis = await result
         withAnimation {
             bubbles = [Bubble(text: "메뉴판 읽기 완료"), Bubble(text: "주방 사진 읽는 중", live: true)]
         }

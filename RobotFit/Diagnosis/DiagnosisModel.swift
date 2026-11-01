@@ -408,7 +408,7 @@ final class DiagnosisModel {
     func showToast(_ text: String) {
         toast = text
         Task { @MainActor in
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .milliseconds(2400))
             if toast == text { toast = nil }
         }
     }

@@ -25,14 +25,9 @@ struct RootView: View {
         }
         .overlay(alignment: .bottom) {
             if let toast = diagnosis.toast {
-                Text(toast)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 12)
-                    .background(Palette.ink.opacity(0.9), in: Capsule())
-                    .padding(.bottom, 110)
-                    .transition(.opacity)
+                ToastView(text: toast)
+                    .padding(.bottom, 112)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
         .animation(.snappy, value: diagnosis.toast)

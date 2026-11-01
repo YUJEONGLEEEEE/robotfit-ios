@@ -94,30 +94,24 @@ struct StoreRegisterView: View {
             }
         }
         .onAppear(perform: load)
-        .alert("지도에 등록된 가게인가요?", isPresented: $isAskingListed) {
-            Button("아니오", role: .cancel) { startManual() }
-            Button("예") { isSearchingPlace = true }
-        } message: {
-            Text("카카오맵에 있는 가게라면\n이름으로 찾아 위치까지 한 번에 넣어요.")
-        }
-        .alert("아직 입력하지 않은 정보가 있어요", isPresented: $isIncomplete) {
-            Button("취소", role: .cancel) {}
-            Button("확인") { saveOnly() }
-        } message: {
-            Text("\(missingText) 입력하지 않았어요.\n그래도 저장할까요?")
-        }
-        .alert("가게를 등록했어요", isPresented: $isConfirming) {
-            Button("저장만 하기") { saveOnly() }
-            Button("진단하기") {
+        .alertCard("지도에 등록된 가게인가요?", isPresented: $isAskingListed, message: "카카오맵에 있는 가게라면\n이름으로 찾아 위치까지 한 번에 넣어요.", actions: [
+            AlertAction(title: "아니오", style: .muted) { startManual() },
+            AlertAction(title: "예") { isSearchingPlace = true },
+        ])
+        .alertCard("아직 입력하지 않은 정보가 있어요", isPresented: $isIncomplete, message: "\(missingText) 입력하지 않았어요.\n그래도 저장할까요?", actions: [
+            AlertAction(title: "취소", style: .muted) {},
+            AlertAction(title: "확인") { saveOnly() },
+        ])
+        .alertCard("가게를 등록했어요", isPresented: $isConfirming, message: "바로 진단을 시작할까요?\n저장하면 가게 정보만 등록돼요.", actions: [
+            AlertAction(title: "저장만 하기", style: .outline) { saveOnly() },
+            AlertAction(title: "진단하기") {
                 let saved = toSaved()
                 model.save(saved)
                 model.diagnose(saved)
                 onDiagnose()
                 dismiss()
-            }
-        } message: {
-            Text("바로 진단을 시작할까요?\n저장하면 가게 정보만 등록돼요.")
-        }
+            },
+        ])
         .fullScreenCover(isPresented: $isSearchingPlace) {
             PlaceSearchSheet { place in
                 name = place.name
